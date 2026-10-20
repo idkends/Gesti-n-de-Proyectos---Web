@@ -1,0 +1,214 @@
+@using GestionProyectosMonster.Models
+@{
+    ViewData["Title"] = "Asignación de Perfiles";
+    var usuarios = ViewBag.Usuarios as List<Usuario> ?? [];
+    var perfiles = ViewBag.Perfiles as List<Perfil> ?? [];
+}
+
+<div class="page-heading">
+    <div>
+        <h1>Asignación de Perfiles</h1>
+        <p>Cambia el rol de acceso de uno o varios colaboradores de forma masiva</p>
+    </div>
+    <a asp-action="Index" class="btn btn-secondary">← Usuarios</a>
+</div>
+
+<!-- Guía de pasos -->
+<div class="guide-steps">
+    <div class="guide-step">
+        <div class="guide-step-num">1</div>
+        <div>
+            <strong>Elige el perfil de destino</strong>
+            <p>Selecciona qué rol quieres asignar: Administrador, RR. HH., Jefe de Departamento o Empleado.</p>
+        </div>
+    </div>
+    <div class="guide-step">
+        <div class="guide-step-num">2</div>
+        <div>
+            <strong>Mueve colaboradores al panel derecho</strong>
+            <p>Haz clic en un colaborador y presiona › para moverlo, o usa »  para mover todos de una vez.</p>
+        </div>
+    </div>
+    <div class="guide-step">
+        <div class="guide-step-num">3</div>
+        <div>
+            <strong>Guarda la asignación</strong>
+            <p>Presiona «Guardar asignación». El cambio se aplica de inmediato, sin que el usuario necesite cerrar sesión.</p>
+        </div>
+    </div>
+</div>
+
+<form asp-action="AsignarPerfil" method="post" id="frmPickList">
+    @Html.AntiForgeryToken()
+
+    <!-- Selector de perfil -->
+    <div class="card" style="margin-bottom:14px;overflow:hidden">
+        <div class="picklist-header">
+            <label style="font-size:13px;font-weight:700;color:var(--tx);white-space:nowrap">
+                Perfil a asignar a los colaboradores del panel derecho:
+            </label>
+            <select name="perfilCodigo" required id="selPerfil" onchange="actualizarEtiquetas()"
+                    style="flex:1;max-width:300px">
+                <option value="">— Seleccionar perfil —</option>
+                @foreach (var p in perfiles)
+                {
+                    <option value="@p.Codigo">@p.Descripcion</option>
+                }
+            </select>
+        </div>
+    </div>
+
+    <!-- Picklist -->
+    <div class="card" style="overflow:hidden;margin-bottom:14px">
+        <div class="picklist-shell">
+
+            <!-- Panel izquierdo -->
+            <div class="picklist-panel">
+                <div class="picklist-panel-header">
+                    <div>
+                        <strong>Todos los colaboradores</strong>
+                        <div style="font-size:11.5px;color:var(--tx-2);margin-top:2px">
+                            Selecciona los que quieres mover al panel derecho
+                        </div>
+                    </div>
+                    <span class="picklist-counter" id="cntLeft">@usuarios.Count</span>
+                </div>
+                <div class="picklist-search">
+                    <input type="search" placeholder="Buscar por nombre o código…"
+                           oninput="filtrarPanel('listLeft', this.value)" />
+                </div>
+                <ul class="picklist-list" id="listLeft">
+                    @foreach (var u in usuarios)
+                    {
+                        <li class="picklist-item"
+                            data-codigo="@u.CodigoEmpleado"
+                            data-nombre="@u.NombreEmpleado.ToLower()"
+                            onclick="seleccionarItem(this)">
+                            @if (!string.IsNullOrEmpty(u.FotoRuta))
+                            {
+                                <img src="/@u.FotoRuta" class="avatar-sm" alt="@u.NombreEmpleado"
+                                     style="width:26px;height:26px;flex-shrink:0" />
+                            }
+                            else
+                            {
+                                <div style="width:26px;height:26px;border-radius:50%;background:var(--surface-3);
+                                            border:1px solid var(--bd-2);display:grid;place-items:center;
+                                            font-size:11px;font-weight:700;color:var(--tx-3);flex-shrink:0">
+                                    @u.NombreEmpleado.FirstOrDefault()
+                                </div>
+                            }
+                            <span class="code-badge">@u.CodigoEmpleado</span>
+                            <span>@u.NombreEmpleado</span>
+                            <span style="margin-left:auto;font-size:11.5px;color:var(--tx-3)">
+                                @(u.PerfilDescripcion ?? u.RolUsuario)
+                            </span>
+                        </li>
+                    }
+                </ul>
+            </div>
+
+            <!-- Controles -->
+            <div class="picklist-controls">
+                <button type="button" class="btn btn-sm btn-secondary" title="Mover seleccionados →"
+                        onclick="mover('listLeft','listRight')">›</button>
+                <button type="button" class="btn btn-sm btn-secondary" title="Mover todos →"
+                        onclick="moverTodos('listLeft','listRight')">»</button>
+                <button type="button" class="btn btn-sm btn-secondary" title="Quitar seleccionados ←"
+                        onclick="mover('listRight','listLeft')">‹</button>
+                <button type="button" class="btn btn-sm btn-secondary" title="Quitar todos ←"
+                        onclick="moverTodos('listRight','listLeft')">«</button>
+            </div>
+
+            <!-- Panel derecho -->
+            <div class="picklist-panel">
+                <div class="picklist-panel-header">
+                    <div>
+                        <strong id="lblPanelDer">Recibirán el perfil seleccionado</strong>
+                        <div style="font-size:11.5px;color:var(--tx-2);margin-top:2px" id="lblPanelDerSub">
+                            Al guardar, todos los colaboradores de este panel tendrán el rol elegido
+                        </div>
+                    </div>
+                    <span class="picklist-counter" id="cntRight">0</span>
+                </div>
+                <div class="picklist-search">
+                    <input type="search" placeholder="Buscar…"
+                           oninput="filtrarPanel('listRight', this.value)" />
+                </div>
+                <ul class="picklist-list" id="listRight"></ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-footer" style="margin-top:0">
+        <button type="submit" class="btn btn-primary" onclick="prepararEnvio()">Guardar asignación</button>
+    </div>
+
+    <div id="hiddenFields"></div>
+</form>
+
+@section Scripts {
+<script>
+function seleccionarItem(li) {
+    li.classList.toggle('selected');
+}
+
+function mover(origenId, destinoId) {
+    var origen  = document.getElementById(origenId);
+    var destino = document.getElementById(destinoId);
+    Array.from(origen.querySelectorAll('.picklist-item.selected')).forEach(function(li) {
+        li.classList.remove('selected');
+        destino.appendChild(li);
+    });
+    actualizarContadores();
+}
+
+function moverTodos(origenId, destinoId) {
+    var origen  = document.getElementById(origenId);
+    var destino = document.getElementById(destinoId);
+    Array.from(origen.querySelectorAll('.picklist-item')).forEach(function(li) {
+        destino.appendChild(li);
+    });
+    actualizarContadores();
+}
+
+function actualizarContadores() {
+    document.getElementById('cntLeft').textContent  = document.getElementById('listLeft').querySelectorAll('.picklist-item').length;
+    document.getElementById('cntRight').textContent = document.getElementById('listRight').querySelectorAll('.picklist-item').length;
+}
+
+function filtrarPanel(listId, texto) {
+    var q = texto.trim().toLowerCase();
+    document.getElementById(listId).querySelectorAll('.picklist-item').forEach(function(li) {
+        var nombre = li.dataset.nombre || '';
+        var codigo = (li.dataset.codigo || '').toLowerCase();
+        li.style.display = (!q || nombre.includes(q) || codigo.includes(q)) ? '' : 'none';
+    });
+}
+
+function actualizarEtiquetas() {
+    var sel = document.getElementById('selPerfil');
+    var txt = sel.options[sel.selectedIndex]?.text || 'Recibirán el perfil seleccionado';
+    if (sel.value) {
+        document.getElementById('lblPanelDer').textContent = txt;
+        document.getElementById('lblPanelDerSub').textContent =
+            'Al guardar, todos los colaboradores de este panel tendrán el rol «' + txt + '»';
+    } else {
+        document.getElementById('lblPanelDer').textContent = 'Recibirán el perfil seleccionado';
+        document.getElementById('lblPanelDerSub').textContent =
+            'Al guardar, todos los colaboradores de este panel tendrán el rol elegido';
+    }
+}
+
+function prepararEnvio() {
+    var container = document.getElementById('hiddenFields');
+    container.innerHTML = '';
+    document.getElementById('listRight').querySelectorAll('.picklist-item').forEach(function(li) {
+        var inp = document.createElement('input');
+        inp.type  = 'hidden';
+        inp.name  = 'empleadosAsignados';
+        inp.value = li.dataset.codigo;
+        container.appendChild(inp);
+    });
+}
+</script>
+}

@@ -1,0 +1,64 @@
+@model List<Empleado>
+@{
+    ViewData["Title"] = "Gestión de Personal";
+}
+
+<div class="page-heading">
+    <div>
+        <h1>Personal</h1>
+        <p>@Model.Count empleado(s) registrado(s)</p>
+    </div>
+    <a asp-action="Crear" class="btn btn-primary">+ Nuevo Empleado</a>
+</div>
+
+<div class="card table-card">
+    @if (Model.Count == 0)
+    {
+        <p class="muted" style="padding:24px">No hay empleados registrados.</p>
+    }
+    else
+    {
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Foto</th>
+                    <th>Código</th>
+                    <th>Cédula</th>
+                    <th>Colaborador</th>
+                    <th>Departamento</th>
+                    <th>Cargo</th>
+                    <th>Sexo</th>
+                    <th>Estado Civil</th>
+                    <th>Cargas</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var emp in Model)
+                {
+                    <tr>
+                        <td>
+                            <img src="@(!string.IsNullOrEmpty(emp.FotoRuta) ? "/" + emp.FotoRuta : "/recursos/foto.jpg")"
+                                 alt="Foto" class="avatar-sm"
+                                 onerror="this.src='/recursos/foto.jpg'" />
+                        </td>
+                        <td><span class="code-badge">@emp.Codigo</span></td>
+                        <td>@emp.Cedula</td>
+                        <td>@emp.NombreCompleto</td>
+                        <td>@(emp.DepartamentoDescripcion ?? emp.DepartamentoCodigo)</td>
+                        <td>@(emp.CargoDescripcion ?? emp.CargoCodigo)</td>
+                        <td>@(emp.SexoDescripcion ?? emp.SexoCodigo)</td>
+                        <td>@(emp.EstadoCivilDescripcion ?? emp.EstadoCivilCodigo ?? "—")</td>
+                        <td>
+                            <span class="badge badge-inactive">@emp.CargosFamiliares</span>
+                        </td>
+                        <td class="actions">
+                            <a asp-action="Editar" asp-route-codigo="@emp.Codigo"
+                               asp-route-paso="general" class="btn btn-sm btn-secondary">Editar</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>

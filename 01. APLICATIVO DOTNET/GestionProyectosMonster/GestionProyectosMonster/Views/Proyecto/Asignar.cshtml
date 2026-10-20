@@ -1,0 +1,78 @@
+@{
+    ViewData["Title"] = "Asignar Personal";
+    var proyecto  = ViewBag.Proyecto  as GestionProyectosMonster.Models.Proyecto;
+    var empleados = ViewBag.Empleados as List<GestionProyectosMonster.Models.Empleado> ?? [];
+    var asignados = ViewBag.Asignados as List<(string CodigoEmpleado, decimal? HorasEstimadas)> ?? [];
+    var asignadosMap = asignados.ToDictionary(a => a.CodigoEmpleado, a => a.HorasEstimadas);
+}
+
+<div class="page-heading">
+    <div>
+        <h1>@proyecto?.Nombre</h1>
+        <p>Asignar empleados y horas estimadas — @proyecto?.Codigo</p>
+    </div>
+    <a asp-action="Index" class="btn btn-secondary">← Volver</a>
+</div>
+
+<div class="card table-card">
+    <form asp-action="Asignar" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="codigo" value="@proyecto?.Codigo" />
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="width:40px"></th>
+                    <th>Código</th>
+                    <th>Colaborador</th>
+                    <th>Departamento</th>
+                    <th>Cargo</th>
+                    <th>H. Semanales Estimadas</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var emp in empleados)
+                {
+                    bool asignado = asignadosMap.ContainsKey(emp.Codigo);
+                    decimal? horas = asignado ? asignadosMap[emp.Codigo] : null;
+                    <tr>
+                        <td>
+                            <input type="checkbox" name="empleados" value="@emp.Codigo"
+                                   id="chk_@emp.Codigo"
+                                   @(asignado ? "checked" : "")
+                                   onchange="toggleHoras('@emp.Codigo', this.checked)" />
+                        </td>
+                        <td><span class="code-badge">@emp.Codigo</span></td>
+                        <td><strong>@emp.NombreCompleto</strong></td>
+                        <td>@emp.DepartamentoDescripcion</td>
+                        <td>@emp.CargoDescripcion</td>
+                        <td>
+                            <input type="number" name="horasEstimadas"
+                                   id="hrs_@emp.Codigo"
+                                   step="0.5" min="0" max="80"
+                                   value="@(horas.HasValue ? horas.Value.ToString("0.##") : "")"
+                                   placeholder="—"
+                                   @(asignado ? "" : "disabled")
+                                   style="width:90px" />
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div class="form-footer">
+            <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">Guardar Asignación</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+<script>
+function toggleHoras(codigo, checked) {
+    var inp = document.getElementById('hrs_' + codigo);
+    inp.disabled = !checked;
+    if (!checked) inp.value = '';
+}
+</script>
+}

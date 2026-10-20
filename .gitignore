@@ -1,0 +1,40 @@
+# Build output
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+publish/
+*.dll.config
+
+# Visual Studio / IDE
+.vs/
+.vscode/
+*.user
+*.suo
+*.userprefs
+*.DotSettings.user
+launchSettings.json.user
+
+# Secretos y configuración local
+.env
+.env.*
+*.pfx
+*.pem
+*.key
+secrets.json
+appsettings.*.local.json
+appsettings.Production.json
+
+# Claude Code (configuración local)
+**/.claude/settings.local.json
+
+# NuGet
+*.nupkg
+packages/
+
+# Sistema operativo
+Thumbs.db
+.DS_Store
+
+# Skills de Claude Code (entorno local)
+**/.claude/skills/

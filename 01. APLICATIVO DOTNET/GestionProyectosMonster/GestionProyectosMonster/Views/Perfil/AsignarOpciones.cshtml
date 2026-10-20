@@ -1,0 +1,275 @@
+@using GestionProyectosMonster.Models
+@{
+    ViewData["Title"] = "Asignar Opciones al Perfil";
+    var perfiles        = ViewBag.Perfiles         as List<Perfil> ?? [];
+    string seleccionado = ViewBag.PerfilSeleccionado as string ?? "";
+    var todasOpciones   = ViewBag.TodasOpciones    as List<Opcion> ?? [];
+    var asignados       = ViewBag.CodigosAsignados as HashSet<string> ?? [];
+
+    var sistemas = todasOpciones
+        .GroupBy(o => new { o.SistemaCodigo, o.SistemaDescripcion })
+        .OrderBy(g => g.Key.SistemaCodigo);
+
+    bool hayPerfil = !string.IsNullOrEmpty(seleccionado);
+
+    string[] ordenSubGrupo = ["Tablas Básicas", "Procesos", "Reportes", "General"];
+}
+
+<div class="page-heading">
+    <div>
+        <h1>Asignar Opciones al Perfil</h1>
+        <p>Selecciona qué pantallas y módulos puede ver cada perfil</p>
+    </div>
+    <a asp-action="Index" class="btn btn-secondary">← Gestión de Perfiles</a>
+</div>
+
+<!-- ── Paso 1: elegir perfil ───────────────────────────────────── -->
+<div class="card form-card" style="margin-bottom:20px">
+    <h2>Paso 1 — Selecciona el perfil</h2>
+    <form method="get" asp-action="AsignarOpciones"
+          style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+        <select name="perfilCodigo" style="min-width:260px;margin:0"
+                onchange="this.form.submit()">
+            <option value="">— Selecciona un perfil —</option>
+            @foreach (var p in perfiles)
+            {
+                <option value="@p.Codigo" selected="@(p.Codigo == seleccionado)">
+                    @p.Codigo — @p.Descripcion
+                </option>
+            }
+        </select>
+        <button type="submit" class="btn btn-secondary">Cargar</button>
+    </form>
+</div>
+
+<!-- ── Paso 2: opciones agrupadas ──────────────────────────────── -->
+@if (hayPerfil)
+{
+    <form method="post" asp-action="AsignarOpciones">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="perfilCodigo" value="@seleccionado" />
+
+        <div class="card table-card" style="margin-bottom:20px">
+            <!-- Cabecera -->
+            <div style="padding:16px 20px;display:flex;align-items:center;
+                        justify-content:space-between;gap:12px;flex-wrap:wrap;
+                        border-bottom:1px solid var(--bd)">
+                <h2 style="margin:0">
+                    Paso 2 — Opciones para
+                    <span class="code-badge">@seleccionado</span>
+                </h2>
+                <div style="display:flex;gap:8px">
+                    <button type="button" class="btn btn-sm btn-secondary"
+                            onclick="seleccionarTodos(true)">Seleccionar todo</button>
+                    <button type="button" class="btn btn-sm btn-secondary"
+                            onclick="seleccionarTodos(false)">Deseleccionar todo</button>
+                </div>
+            </div>
+
+            <!-- Sistemas (acordeón de primer nivel) -->
+            <div style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">
+                @foreach (var sistema in sistemas)
+                {
+                    var sistemaId = $"sis_{sistema.Key.SistemaCodigo}";
+                    var subGrupos = sistema
+                        .GroupBy(o => o.SubGrupo)
+                        .OrderBy(g => Array.IndexOf(ordenSubGrupo, g.Key));
+
+                    <div class="opc-sistema" id="@sistemaId">
+
+                        <!-- Encabezado del sistema -->
+                        <button type="button" class="opc-sistema-btn"
+                                onclick="toggleSistema('@sistemaId')"
+                                aria-expanded="true">
+                            <span class="code-badge" style="font-size:11px">
+                                @sistema.Key.SistemaCodigo
+                            </span>
+                            <strong>@sistema.Key.SistemaDescripcion</strong>
+                            <span class="opc-cnt">
+                                @{
+                                    int marcadosSistema = sistema.Count(o => asignados.Contains(o.Codigo));
+                                    int totalSistema    = sistema.Count();
+                                }
+                                @marcadosSistema / @totalSistema
+                            </span>
+                            <span class="opc-arrow">&#9660;</span>
+                        </button>
+
+                        <!-- Sub-grupos dentro del sistema -->
+                        <div class="opc-sistema-body" id="@(sistemaId)_body">
+                            @foreach (var subGrupo in subGrupos)
+                            {
+                                var sgId = $"{sistemaId}_{subGrupo.Key.Replace(" ", "_")}";
+                                <div class="opc-subgrupo" id="@sgId">
+
+                                    <!-- Encabezado del sub-grupo -->
+                                    <button type="button" class="opc-subgrupo-btn"
+                                            onclick="toggleSubgrupo('@sgId')"
+                                            aria-expanded="true">
+                                        <span class="opc-sg-label">@subGrupo.Key</span>
+                                        <span class="opc-arrow-sm">&#9660;</span>
+                                    </button>
+
+                                    <!-- Opciones del sub-grupo -->
+                                    <ul class="opc-lista" id="@(sgId)_items">
+                                        @foreach (var op in subGrupo)
+                                        {
+                                            bool marcado = asignados.Contains(op.Codigo);
+                                            <li class="opc-item">
+                                                <label class="opc-label" for="opc_@op.Codigo">
+                                                    <input type="checkbox"
+                                                           id="opc_@op.Codigo"
+                                                           name="opcionesSeleccionadas"
+                                                           value="@op.Codigo"
+                                                           class="opc-check"
+                                                           @(marcado ? "checked" : "") />
+                                                    <span class="opc-name">@op.Descripcion</span>
+                                                    <span class="code-badge" style="font-size:10.5px">
+                                                        @op.Codigo
+                                                    </span>
+                                                </label>
+                                            </li>
+                                        }
+                                    </ul>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div style="display:flex;gap:12px">
+            <button type="submit" class="btn btn-primary">Guardar opciones</button>
+            <a asp-action="AsignarOpciones" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
+}
+else
+{
+    <div class="card" style="padding:32px;text-align:center;color:var(--tx-3)">
+        <p style="font-size:15px">Selecciona un perfil en el paso 1 para ver las opciones disponibles.</p>
+    </div>
+}
+
+<style>
+/* ── Acordeón Sistema ─────────────────────────────────────── */
+.opc-sistema {
+  border: 1px solid var(--bd-2);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+
+.opc-sistema-btn {
+  width: 100%; display: flex; align-items: center; gap: 10px;
+  padding: 13px 16px;
+  background: var(--surface-2); border: none; cursor: pointer;
+  text-align: left; font: inherit;
+  transition: background var(--t) var(--ease);
+}
+.opc-sistema-btn:hover { background: var(--surface-3); }
+.opc-sistema-btn strong { font-size: 13.5px; color: var(--tx); flex: 1; }
+.opc-cnt {
+  font-size: 11px; font-weight: 600;
+  color: var(--accent); background: var(--accent-bg);
+  border: 1px solid var(--gbd-2); border-radius: var(--r-fl);
+  padding: 1px 8px; white-space: nowrap;
+}
+.opc-arrow {
+  font-size: 9px; color: var(--tx-3);
+  transition: transform var(--t-lg) var(--ease-out);
+  margin-left: 4px;
+}
+.opc-sistema-btn[aria-expanded="false"] .opc-arrow { transform: rotate(-90deg); }
+
+.opc-sistema-body {
+  padding: 10px 14px 14px;
+  display: flex; flex-direction: column; gap: 8px;
+  background: var(--surface);
+  border-top: 1px solid var(--bd);
+  overflow: hidden;
+  max-height: 2000px;
+  transition: max-height var(--t-lg) var(--ease-out), padding var(--t) var(--ease), opacity var(--t);
+  opacity: 1;
+}
+.opc-sistema-body.collapsed {
+  max-height: 0; padding-top: 0; padding-bottom: 0; opacity: 0; pointer-events: none;
+}
+
+/* ── Sub-grupo ────────────────────────────────────────────── */
+.opc-subgrupo {
+  border: 1px solid var(--bd);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+
+.opc-subgrupo-btn {
+  width: 100%; display: flex; align-items: center; gap: 8px;
+  padding: 9px 14px;
+  background: var(--surface-2); border: none; cursor: pointer;
+  text-align: left; font: inherit;
+  transition: background var(--t) var(--ease);
+}
+.opc-subgrupo-btn:hover { background: rgba(168 255 53 / .05); }
+.opc-sg-label {
+  font-size: 11.5px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.07em; color: var(--tx-2); flex: 1;
+}
+.opc-arrow-sm {
+  font-size: 8px; color: var(--tx-3);
+  transition: transform var(--t-lg) var(--ease-out);
+}
+.opc-subgrupo-btn[aria-expanded="false"] .opc-arrow-sm { transform: rotate(-90deg); }
+
+.opc-lista {
+  list-style: none; margin: 0; padding: 6px 0;
+  display: flex; flex-direction: column; gap: 2px;
+  max-height: 1000px;
+  overflow: hidden;
+  transition: max-height var(--t-lg) var(--ease-out), opacity var(--t) var(--ease);
+  opacity: 1;
+}
+.opc-lista.collapsed { max-height: 0; opacity: 0; pointer-events: none; }
+
+/* ── Ítem de opción ───────────────────────────────────────── */
+.opc-item { padding: 0 14px; }
+.opc-label {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 10px; border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: background var(--t) var(--ease);
+}
+.opc-label:hover { background: rgba(168 255 53 / .04); }
+.opc-label:has(.opc-check:checked) {
+  background: var(--accent-bg);
+}
+.opc-check {
+  width: 15px; height: 15px; flex-shrink: 0;
+  accent-color: var(--accent); cursor: pointer;
+}
+.opc-name { flex: 1; font-size: 13px; color: var(--tx); }
+</style>
+
+@section Scripts {
+<script>
+function seleccionarTodos(marcar) {
+    document.querySelectorAll('.opc-check').forEach(cb => cb.checked = marcar);
+}
+
+function toggleSistema(id) {
+    var body = document.getElementById(id + '_body');
+    var btn  = document.querySelector('#' + id + ' > .opc-sistema-btn');
+    if (!body || !btn) return;
+    var collapsed = body.classList.toggle('collapsed');
+    btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+}
+
+function toggleSubgrupo(id) {
+    var list = document.getElementById(id + '_items');
+    var btn  = document.querySelector('#' + id + ' > .opc-subgrupo-btn');
+    if (!list || !btn) return;
+    var collapsed = list.classList.toggle('collapsed');
+    btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+}
+</script>
+}

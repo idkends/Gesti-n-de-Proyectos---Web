@@ -1,0 +1,45 @@
+@model List<Proyecto>
+@{
+    ViewData["Title"] = "Asignación de Personal";
+}
+
+<div class="page-heading">
+    <div>
+        <h1>Asignación de Personal</h1>
+        <p>Seleccione un proyecto para asignar empleados</p>
+    </div>
+</div>
+
+<div class="card table-card">
+    @if (Model.Count == 0)
+    {
+        <p class="muted" style="padding:24px">No hay proyectos registrados.</p>
+    }
+    else
+    {
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Nombre</th>
+                    <th>Departamento</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var p in Model)
+                {
+                    <tr>
+                        <td><span class="code-badge">@p.Codigo</span></td>
+                        <td>@p.Nombre</td>
+                        <td>@(p.DepartamentoDescripcion ?? "—")</td>
+                        <td class="actions">
+                            <a asp-action="Asignar" asp-route-codigo="@p.Codigo"
+                               class="btn btn-sm btn-secondary">Asignar Personal</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>

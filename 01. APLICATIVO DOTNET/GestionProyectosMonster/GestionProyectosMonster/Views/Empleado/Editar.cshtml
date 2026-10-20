@@ -1,0 +1,344 @@
+@model Empleado
+@{
+    ViewData["Title"] = $"Editar: {Model.NombreCompleto}";
+    string paso = ViewBag.Paso as string ?? "general";
+    var cargos = ViewBag.Cargos as List<GestionProyectosMonster.Models.Cargo> ?? [];
+    var educaciones = ViewBag.Educaciones as List<GestionProyectosMonster.Models.Educacion> ?? [];
+    var familiares = ViewBag.Familiares as List<GestionProyectosMonster.Models.Familiar> ?? [];
+}
+
+<div class="page-heading">
+    <h1>Gestión de Personal</h1>
+    <p>Administra colaboradores, formación y cargas familiares.</p>
+</div>
+
+<!-- Header persistente del empleado -->
+<div class="card employee-header">
+    <div class="employee-header-photo">
+        @if (!string.IsNullOrEmpty(Model.FotoRuta))
+        {
+            <img src="/@Model.FotoRuta" class="avatar-lg" alt="Foto" />
+        }
+        else
+        {
+            <div class="avatar-placeholder">
+                <span>@(Model.Nombre.Length > 0 ? Model.Nombre[0].ToString() : "?")</span>
+            </div>
+        }
+    </div>
+    <div class="employee-header-fields">
+        <div class="field">
+            <label>Código</label>
+            <input type="text" value="@Model.Codigo" readonly class="readonly" />
+        </div>
+        <div class="field">
+            <label>Nombres</label>
+            <input type="text" value="@Model.Nombre" readonly class="readonly" />
+        </div>
+        <div class="field">
+            <label>Apellidos</label>
+            <input type="text" value="@Model.Apellido" readonly class="readonly" />
+        </div>
+        <div class="field">
+            <label>Cargas</label>
+            <input type="text" value="@Model.CargosFamiliares" readonly class="readonly" />
+        </div>
+    </div>
+</div>
+
+<!-- Stepper -->
+<div class="stepper">
+    <a href="@Url.Action("Editar", new { codigo = Model.Codigo, paso = "general" })"
+       class="step @(paso == "general" ? "active" : "done")">
+        <span class="step-num">1</span><span>Datos Generales</span>
+    </a>
+    <a href="@Url.Action("Editar", new { codigo = Model.Codigo, paso = "formacion" })"
+       class="step @(paso == "formacion" ? "active" : "")">
+        <span class="step-num">2</span><span>Formación</span>
+    </a>
+    <a href="@Url.Action("Editar", new { codigo = Model.Codigo, paso = "familiares" })"
+       class="step @(paso == "familiares" ? "active" : "")">
+        <span class="step-num">3</span><span>Familiares</span>
+    </a>
+</div>
+
+@* Cuadro de contraseña temporal — aparece solo cuando RR.HH. crea un empleado *@
+@if (paso == "formacion" && TempData["ClaveTemp"] != null)
+{
+    <div class="alert-clave-temp">
+        <strong>Contraseña temporal generada</strong>
+        <p>Entrega esta contraseña al colaborador de forma segura:</p>
+        <div class="clave-temp-box">
+            <code id="claveTemp">@TempData["ClaveTemp"]</code>
+            <button type="button" class="btn btn-sm btn-secondary"
+                    onclick="navigator.clipboard.writeText(document.getElementById('claveTemp').textContent);this.textContent='¡Copiado!'">
+                Copiar
+            </button>
+        </div>
+        <p style="margin-top:8px;font-size:12px;color:#92400e">
+            El colaborador deberá cambiarla en su próximo acceso. RR. HH. no puede ver contraseñas después de cerrar esta página.
+        </p>
+    </div>
+}
+
+@if (paso == "general")
+{
+    <div class="card form-card">
+        <form asp-action="Editar" method="post" enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Codigo" />
+            <input type="hidden" name="paso" value="general" />
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-error">@Html.ValidationSummary(false)</div>
+            }
+
+            <div class="form-grid">
+                <div class="field">
+                    <label>Código</label>
+                    <input asp-for="Codigo" readonly class="readonly" />
+                </div>
+                <div class="field">
+                    <label>Nombres <span class="req">*</span></label>
+                    <input asp-for="Nombre" required />
+                </div>
+                <div class="field">
+                    <label>Apellidos <span class="req">*</span></label>
+                    <input asp-for="Apellido" required />
+                </div>
+                <div class="field">
+                    <label>Cédula <span class="req">*</span></label>
+                    <input asp-for="Cedula" maxlength="10" required />
+                </div>
+                <div class="field">
+                    <label>Email <span class="req">*</span></label>
+                    <input asp-for="Email" type="email" required />
+                </div>
+                <div class="field">
+                    <label>Teléfono <span class="req">*</span></label>
+                    <input asp-for="Telefono" maxlength="15" required />
+                </div>
+                <div class="field">
+                    <label>Fecha de Nacimiento <span class="req">*</span></label>
+                    <input asp-for="FechaNacimiento" type="date" required />
+                </div>
+                <div class="field">
+                    <label>Fecha de Ingreso <span class="req">*</span></label>
+                    <input asp-for="FechaSalida" type="date" required />
+                </div>
+                <div class="field">
+                    <label>Sexo <span class="req">*</span></label>
+                    <select asp-for="SexoCodigo"
+                            asp-items="@(new SelectList(ViewBag.Sexos as Dictionary<string,string>, "Key", "Value", Model.SexoCodigo))"
+                            required>
+                        <option value="">— Seleccione —</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Estado Civil</label>
+                    <select asp-for="EstadoCivilCodigo"
+                            asp-items="@(new SelectList(ViewBag.EstadosCiviles as Dictionary<string,string>, "Key", "Value", Model.EstadoCivilCodigo))">
+                        <option value="">— Seleccione —</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Cargo <span class="req">*</span></label>
+                    <select asp-for="CargoCodigo" id="selCargo" required onchange="sincronizarDepto(this)">
+                        <option value="">— Seleccione cargo —</option>
+                        @foreach (var c in cargos)
+                        {
+                            <option value="@c.Codigo" data-dep="@c.DepartamentoCodigo"
+                                    selected="@(c.Codigo == Model.CargoCodigo ? "selected" : null)">
+                                @c.DepartamentoDescripcion — @c.Descripcion
+                            </option>
+                        }
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Departamento <span class="req">*</span></label>
+                    <select asp-for="DepartamentoCodigo" id="selDep"
+                            asp-items="@(new SelectList(ViewBag.Departamentos as Dictionary<string,string>, "Key", "Value", Model.DepartamentoCodigo))"
+                            required>
+                        <option value="">— Seleccione —</option>
+                    </select>
+                </div>
+                <div class="field full">
+                    <label>Dirección <span class="req">*</span></label>
+                    <input asp-for="Direccion" required />
+                </div>
+                <div class="field">
+                    <label>Pasaporte</label>
+                    <input asp-for="Pasaporte" />
+                </div>
+                <div class="field">
+                    <label>Cambiar Foto</label>
+                    <input type="file" name="foto" accept="image/*" />
+                </div>
+            </div>
+
+            <div class="form-footer">
+                <a asp-action="Index" class="btn btn-secondary">Volver</a>
+                <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+            </div>
+        </form>
+    </div>
+}
+
+@if (paso == "formacion")
+{
+    <div class="card form-card">
+        <h2>Formación Académica</h2>
+        <form asp-action="AgregarEducacion" method="post" id="frmEdu">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="CodigoEmpleado" value="@Model.Codigo" />
+            <div class="form-grid">
+                <div class="field">
+                    <label>Título</label>
+                    <input list="listaTitulos" name="Titulo" required />
+                    <datalist id="listaTitulos">
+                        @foreach (var t in (ViewBag.Titulos as List<string> ?? []))
+                        { <option value="@t" /> }
+                    </datalist>
+                </div>
+                <div class="field">
+                    <label>Institución</label>
+                    <input list="listaInstituciones" name="Institucion" required />
+                    <datalist id="listaInstituciones">
+                        @foreach (var i in (ViewBag.Instituciones as List<string> ?? []))
+                        { <option value="@i" /> }
+                    </datalist>
+                </div>
+                <div class="field">
+                    <label>Fecha Inicio</label>
+                    <input type="date" name="FechaInicio" required />
+                </div>
+                <div class="field">
+                    <label>Fecha de Grado</label>
+                    <input type="date" name="FechaGrado" required />
+                </div>
+            </div>
+            <button type="submit" class="btn btn-secondary">+ Agregar Título</button>
+        </form>
+
+        @if (educaciones.Count > 0)
+        {
+            <table class="data-table" style="margin-top:20px">
+                <thead><tr><th>Título</th><th>Institución</th><th>Grado</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var edu in educaciones)
+                    {
+                        <tr>
+                            <td>@edu.Titulo</td>
+                            <td>@edu.Institucion</td>
+                            <td>@edu.FechaGrado.ToString("yyyy")</td>
+                            <td>
+                                <form asp-action="EliminarEducacion" method="post" style="display:inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="codigo" value="@edu.Codigo" />
+                                    <input type="hidden" name="codigoEmpleado" value="@Model.Codigo" />
+                                    <button type="submit" class="btn btn-sm btn-danger"
+                                            onclick="return confirm('¿Eliminar este título?')">Eliminar</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+        <div class="form-footer">
+            <a asp-action="Editar" asp-route-codigo="@Model.Codigo" asp-route-paso="general"
+               class="btn btn-secondary">← Anterior</a>
+            <a asp-action="Editar" asp-route-codigo="@Model.Codigo" asp-route-paso="familiares"
+               class="btn btn-primary">Siguiente →</a>
+        </div>
+    </div>
+}
+
+@if (paso == "familiares")
+{
+    <div class="card form-card">
+        <h2>Cargas Familiares (@Model.CargosFamiliares)</h2>
+        <form asp-action="AgregarFamiliar" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="CodigoEmpleado" value="@Model.Codigo" />
+            <div class="form-grid">
+                <div class="field">
+                    <label>Nombres</label>
+                    <input name="Nombre" required />
+                </div>
+                <div class="field">
+                    <label>Apellidos</label>
+                    <input name="Apellido" required />
+                </div>
+                <div class="field">
+                    <label>Parentesco</label>
+                    <select name="ParentescoCodigo" required>
+                        <option value="">— Seleccione —</option>
+                        @foreach (var kv in (ViewBag.Parentescos as Dictionary<string,string> ?? []))
+                        {
+                            <option value="@kv.Key">@kv.Value</option>
+                        }
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Sexo</label>
+                    <select name="SexoCodigo" required>
+                        @foreach (var kv in (ViewBag.Sexos as Dictionary<string,string> ?? []))
+                        {
+                            <option value="@kv.Key">@kv.Value</option>
+                        }
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Fecha de Nacimiento</label>
+                    <input type="date" name="FechaNacimiento" required />
+                </div>
+            </div>
+            <button type="submit" class="btn btn-secondary">+ Agregar Familiar</button>
+        </form>
+
+        @if (familiares.Count > 0)
+        {
+            <table class="data-table" style="margin-top:20px">
+                <thead><tr><th>Nombre</th><th>Parentesco</th><th>Sexo</th><th>Nacimiento</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var fam in familiares)
+                    {
+                        <tr>
+                            <td>@fam.Apellido, @fam.Nombre</td>
+                            <td>@fam.ParentescoDescripcion</td>
+                            <td>@fam.SexoDescripcion</td>
+                            <td>@fam.FechaNacimiento.ToString("dd/MM/yyyy")</td>
+                            <td>
+                                <form asp-action="EliminarFamiliar" method="post" style="display:inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="codigo" value="@fam.Codigo" />
+                                    <input type="hidden" name="codigoEmpleado" value="@Model.Codigo" />
+                                    <button type="submit" class="btn btn-sm btn-danger"
+                                            onclick="return confirm('¿Eliminar este familiar?')">Eliminar</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+        <div class="form-footer">
+            <a asp-action="Editar" asp-route-codigo="@Model.Codigo" asp-route-paso="formacion"
+               class="btn btn-secondary">← Anterior</a>
+            <a asp-action="Index" class="btn btn-primary">Finalizar ✓</a>
+        </div>
+    </div>
+}
+
+@section Scripts {
+<script>
+function sincronizarDepto(sel) {
+    const dep = sel.options[sel.selectedIndex]?.dataset?.dep;
+    if (dep) document.getElementById('selDep').value = dep;
+}
+</script>
+}

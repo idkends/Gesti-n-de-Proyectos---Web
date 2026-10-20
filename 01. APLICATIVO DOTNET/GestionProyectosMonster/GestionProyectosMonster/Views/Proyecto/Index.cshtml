@@ -1,0 +1,116 @@
+@model List<Proyecto>
+@{
+    ViewData["Title"] = "Proyectos";
+    var departamentos = ViewBag.Departamentos as List<GestionProyectosMonster.Models.Departamento> ?? [];
+}
+
+<div class="page-heading">
+    <div>
+        <h1>Proyectos</h1>
+        <p>@Model.Count proyecto(s) registrado(s)</p>
+    </div>
+    <button class="btn btn-primary" onclick="mostrarNuevo()">+ Nuevo Proyecto</button>
+</div>
+
+<div id="frmPanel" class="card form-card" style="display:none">
+    <h2 id="frmTitulo">Nuevo Proyecto</h2>
+    <form asp-action="Guardar" method="post">
+        @Html.AntiForgeryToken()
+        <div class="form-grid">
+            <div class="field">
+                <label>Código (3 chars) <span class="req">*</span></label>
+                <input id="fCodigo" name="Codigo" maxlength="3" required style="text-transform:uppercase" />
+            </div>
+            <div class="field">
+                <label>Nombre <span class="req">*</span></label>
+                <input id="fNombre" name="Nombre" maxlength="50" required />
+            </div>
+            <div class="field">
+                <label>Departamento</label>
+                <select id="fDep" name="DepartamentoCodigo">
+                    <option value="">— Sin departamento —</option>
+                    @foreach (var d in departamentos)
+                    {
+                        <option value="@d.Codigo">@d.Descripcion</option>
+                    }
+                </select>
+            </div>
+        </div>
+        <div class="form-footer">
+            <button type="button" class="btn btn-secondary" onclick="ocultarForm()">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+    </form>
+</div>
+
+<div class="card table-card">
+    @if (Model.Count == 0)
+    {
+        <p class="muted" style="padding:24px">No hay proyectos registrados.</p>
+    }
+    else
+    {
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Nombre</th>
+                    <th>Departamento</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var p in Model)
+                {
+                    <tr>
+                        <td><span class="code-badge">@p.Codigo</span></td>
+                        <td>@p.Nombre</td>
+                        <td>@(p.DepartamentoDescripcion ?? "—")</td>
+                        <td class="actions">
+                            <a asp-action="Asignar" asp-route-codigo="@p.Codigo"
+                               class="btn btn-sm btn-secondary">Asignar Personal</a>
+                            <button class="btn btn-sm btn-secondary"
+                                    onclick="editarPro('@p.Codigo','@p.Nombre','@p.DepartamentoCodigo')">
+                                Editar
+                            </button>
+                            <form asp-action="Eliminar" method="post" style="display:inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="codigo" value="@p.Codigo" />
+                                <button type="submit" class="btn btn-sm btn-danger"
+                                        onclick="return confirm('¿Eliminar proyecto @p.Nombre?')">
+                                    Eliminar
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@section Scripts {
+<script>
+function mostrarNuevo() {
+    document.getElementById('frmTitulo').textContent = 'Nuevo Proyecto';
+    document.getElementById('fCodigo').readOnly = false;
+    document.getElementById('fCodigo').value = '';
+    document.getElementById('fNombre').value = '';
+    document.getElementById('fDep').value = '';
+    document.getElementById('frmPanel').style.display = 'block';
+    document.getElementById('fCodigo').focus();
+}
+function editarPro(cod, nombre, dep) {
+    document.getElementById('frmTitulo').textContent = 'Editar Proyecto';
+    document.getElementById('fCodigo').value = cod;
+    document.getElementById('fCodigo').readOnly = true;
+    document.getElementById('fNombre').value = nombre;
+    document.getElementById('fDep').value = dep || '';
+    document.getElementById('frmPanel').style.display = 'block';
+    document.getElementById('fNombre').focus();
+}
+function ocultarForm() {
+    document.getElementById('frmPanel').style.display = 'none';
+}
+</script>
+}

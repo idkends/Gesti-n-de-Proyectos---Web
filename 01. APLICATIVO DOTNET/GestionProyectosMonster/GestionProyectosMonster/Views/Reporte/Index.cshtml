@@ -1,0 +1,125 @@
+@model List<GestionProyectosMonster.Models.Empleado>
+@using GestionProyectosMonster.Models
+@{
+    ViewData["Title"] = "Reporte de Personal";
+    var usuariosMap  = ViewBag.UsuariosMap  as Dictionary<string, Usuario> ?? new();
+    string fechaGen  = ViewBag.FechaGen     ?? DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss");
+    string generadoPor  = ViewBag.GeneradoPor ?? "Administrador";
+    int totalEmpleados  = ViewBag.TotalEmpleados ?? Model.Count;
+    int activos         = ViewBag.Activos    ?? 0;
+    int inactivos       = ViewBag.Inactivos  ?? 0;
+    int sinUsuario      = ViewBag.SinUsuario ?? 0;
+}
+
+<!-- Barra de acciones — se oculta al imprimir -->
+<div class="report-toolbar">
+    <div>
+        <h1 style="font-size:20px">Reporte de Personal</h1>
+        <p>Activos y roles del sistema</p>
+    </div>
+    <div style="display:flex;gap:8px;margin-left:auto;align-items:center">
+        <a asp-controller="Empleado" asp-action="Index" class="btn btn-secondary">← Volver</a>
+        <button type="button" class="btn btn-primary" onclick="window.print()">
+            Imprimir / Guardar PDF
+        </button>
+    </div>
+</div>
+
+<!-- Página del reporte (diseño A4 en pantalla, puro en impresión) -->
+<div class="report-page">
+
+    <!-- Encabezado -->
+    <div class="report-header">
+        <img class="report-logo"
+             src="~/recursos/Sullivan.png"
+             alt="Monster"
+             onerror="this.style.display='none'" />
+        <div class="report-title-block">
+            <h1>Reporte General de Personal Activo y Roles</h1>
+            <div class="report-subtitle">Gestión de Proyectos Monster</div>
+            <div class="report-meta">
+                <span><strong>Fecha:</strong> @fechaGen</span>
+                <span><strong>Generado por:</strong> @generadoPor</span>
+                <span><strong>Total empleados:</strong> @totalEmpleados</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas rápidas -->
+    <div class="stat-row">
+        <div class="stat-box stat-total">
+            <span class="stat-num">@totalEmpleados</span>
+            <span class="stat-lbl">Colaboradores</span>
+        </div>
+        <div class="stat-box stat-activo">
+            <span class="stat-num">@activos</span>
+            <span class="stat-lbl">Usuarios activos</span>
+        </div>
+        <div class="stat-box stat-inact">
+            <span class="stat-num">@inactivos</span>
+            <span class="stat-lbl">Usuarios inactivos</span>
+        </div>
+        <div class="stat-box stat-sin">
+            <span class="stat-num">@sinUsuario</span>
+            <span class="stat-lbl">Sin usuario</span>
+        </div>
+    </div>
+
+    <!-- Tabla de datos -->
+    <div style="overflow-x:auto">
+        @if (!Model.Any())
+        {
+            <p style="padding:24px;color:#64748b">No hay empleados registrados.</p>
+        }
+        else
+        {
+            <table class="report-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Código</th>
+                        <th>Apellido</th>
+                        <th>Nombre</th>
+                        <th>Departamento</th>
+                        <th>Cargo</th>
+                        <th>Rol en el sistema</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{int fila = 1;}
+                    @foreach (var emp in Model)
+                    {
+                        Usuario? u = usuariosMap.TryGetValue(emp.Codigo, out var usr) ? usr : null;
+                        bool tieneUsuario = u != null;
+                        bool activo       = tieneUsuario && u!.EstadoCodigo == "A";
+                        string rol        = tieneUsuario ? (u!.PerfilDescripcion ?? u.RolUsuario) : "Sin usuario";
+                        string estado     = tieneUsuario ? (u!.EstadoDescripcion ?? u.EstadoCodigo) : "Sin usuario";
+                        string badgeRol   = tieneUsuario ? "rpt-badge-rol" : "rpt-badge-none";
+                        string badgeEst   = tieneUsuario ? (activo ? "rpt-badge-active" : "rpt-badge-inactive") : "rpt-badge-none";
+
+                        <tr>
+                            <td style="color:#94a3b8;font-size:11px">@fila</td>
+                            <td><span class="rpt-code">@emp.Codigo</span></td>
+                            <td><strong>@emp.Apellido</strong></td>
+                            <td>@emp.Nombre</td>
+                            <td>@(emp.DepartamentoDescripcion ?? "—")</td>
+                            <td>@(emp.CargoDescripcion ?? "—")</td>
+                            <td><span class="rpt-badge @badgeRol">@rol</span></td>
+                            <td><span class="rpt-badge @badgeEst">@estado</span></td>
+                        </tr>
+                        fila++;
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+
+    <!-- Pie de página -->
+    <div class="report-footer">
+        Este documento es de uso interno y confidencial &nbsp;·&nbsp;
+        Gestión de Proyectos Monster &nbsp;·&nbsp;
+        Generado el @fechaGen
+    </div>
+
+</div>

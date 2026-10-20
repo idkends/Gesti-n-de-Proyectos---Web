@@ -1,0 +1,112 @@
+@{
+    ViewData["Title"] = "Gestionar Contraseñas";
+    var usuarios = ViewBag.Usuarios as List<GestionProyectosMonster.Models.Usuario> ?? [];
+}
+
+<div class="page-heading">
+    <div>
+        <h1>Gestionar Contraseñas</h1>
+        <p>Restablecer la contraseña de cualquier usuario del sistema</p>
+    </div>
+    <a asp-action="Index" class="btn btn-secondary">← Usuarios</a>
+</div>
+
+<div class="card form-card" style="max-width:560px">
+    <h2 style="margin-bottom:20px">Restablecer contraseña</h2>
+
+    <form asp-action="GestionarClave" method="post" id="frmClave">
+        @Html.AntiForgeryToken()
+
+        <div class="form-grid">
+            <div class="field full">
+                <label>Usuario <span class="req">*</span></label>
+                <select name="codigoEmpleado" required id="selUsuario">
+                    <option value="">— Seleccione un usuario —</option>
+                    @foreach (var u in usuarios)
+                    {
+                        <option value="@u.CodigoEmpleado">
+                            @u.CodigoEmpleado — @u.NombreEmpleado (@(u.PerfilDescripcion ?? u.RolUsuario))
+                        </option>
+                    }
+                </select>
+            </div>
+
+            <div class="field full">
+                <label>Nueva contraseña <span class="req">*</span></label>
+                <input id="inpClave" name="nuevaClave" type="password"
+                       placeholder="Mínimo 9 chars, mayúscula, número"
+                       oninput="medirFortaleza(this.value)" required />
+                <div class="pwd-meter" id="pwdMeter">
+                    <div class="pwd-bar" id="pwdBar"></div>
+                </div>
+                <p class="field-help" id="pwdLabel">Ingresa una contraseña</p>
+            </div>
+
+            <div class="field full">
+                <label>Confirmar contraseña <span class="req">*</span></label>
+                <input name="confirmarClave" type="password"
+                       placeholder="Repite la contraseña" required />
+            </div>
+        </div>
+
+        <div class="form-footer">
+            <button type="submit" class="btn btn-primary">Guardar contraseña</button>
+        </div>
+    </form>
+</div>
+
+<!-- Tabla de usuarios como referencia -->
+<div class="card table-card" style="margin-top:28px">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Código</th>
+                <th>Empleado</th>
+                <th>Perfil</th>
+                <th>Estado</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var u in usuarios)
+            {
+                <tr>
+                    <td><span class="code-badge">@u.CodigoEmpleado</span></td>
+                    <td>@u.NombreEmpleado</td>
+                    <td>@u.PerfilDescripcion</td>
+                    <td>
+                        <span class="badge @(u.EstadoCodigo == "A" ? "badge-active" : "badge-inactive")">
+                            @u.EstadoDescripcion
+                        </span>
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-secondary"
+                                onclick="document.getElementById('selUsuario').value='@u.CodigoEmpleado'">
+                            Seleccionar
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@section Scripts {
+<script>
+function medirFortaleza(pwd) {
+    var bar   = document.getElementById('pwdBar');
+    var label = document.getElementById('pwdLabel');
+    var score = 0;
+    if (pwd.length >= 9)  score++;
+    if (/[A-Z]/.test(pwd)) score++;
+    if (/[0-9]/.test(pwd)) score++;
+    if (/[^A-Za-z0-9]/.test(pwd)) score++;
+
+    var colores = ['#ef4444','#f97316','#eab308','#22c55e'];
+    var labels  = ['Débil','Aceptable','Fuerte','Muy fuerte'];
+    bar.style.width   = (score * 25) + '%';
+    bar.style.background = colores[score - 1] || '#ef4444';
+    label.textContent = score > 0 ? labels[score - 1] : 'Ingresa una contraseña';
+}
+</script>
+}

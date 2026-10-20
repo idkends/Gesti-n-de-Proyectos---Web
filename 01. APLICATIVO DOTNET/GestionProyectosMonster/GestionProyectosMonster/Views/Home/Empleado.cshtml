@@ -1,0 +1,91 @@
+@{
+    ViewData["Title"] = "Portal del Empleado";
+    var emp       = ViewBag.Empleado  as GestionProyectosMonster.Models.Empleado;
+    var proyectos = ViewBag.Proyectos as List<GestionProyectosMonster.Models.Proyecto> ?? [];
+}
+
+<div class="page-heading">
+    <div>
+        <h1>Portal del Empleado</h1>
+        <p>Bienvenido, @User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value</p>
+    </div>
+    <a asp-controller="Horas" asp-action="Registrar" class="btn btn-primary">Registrar horas</a>
+</div>
+
+<!-- Estadísticas -->
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:24px">
+    <div class="card card-padded" style="text-align:center">
+        <p style="font-size:12px;color:var(--tx-3);margin-bottom:4px">Proyectos asignados</p>
+        <strong style="font-size:32px;color:var(--brand)">@proyectos.Count</strong>
+    </div>
+    @if (emp != null)
+    {
+        <div class="card card-padded" style="text-align:center">
+            <p style="font-size:12px;color:var(--tx-3);margin-bottom:4px">Cargas familiares</p>
+            <strong style="font-size:32px;color:var(--brand)">@emp.CargosFamiliares</strong>
+        </div>
+    }
+</div>
+
+<!-- Tabla de proyectos asignados -->
+<div class="card table-card" style="margin-bottom:24px">
+    <h2 style="padding:16px 20px 0">Mis proyectos</h2>
+    @if (proyectos.Count == 0)
+    {
+        <p class="muted" style="padding:20px">No tienes proyectos asignados en este momento.</p>
+    }
+    else
+    {
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Proyecto</th>
+                    <th>Departamento</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var p in proyectos)
+                {
+                    <tr>
+                        <td><span class="code-badge">@p.Codigo</span></td>
+                        <td>@p.Nombre</td>
+                        <td>@(p.DepartamentoDescripcion ?? "—")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@if (emp != null)
+{
+    <div class="card card-padded" style="margin-bottom:24px">
+        <h2 style="margin-bottom:16px">Mi información</h2>
+        @if (!string.IsNullOrEmpty(emp.FotoRuta))
+        {
+            <img src="/@emp.FotoRuta" class="avatar-lg" alt="Mi foto" style="margin-bottom:16px" />
+        }
+        <div class="form-grid">
+            <div class="field-info"><label>Código</label><span>@emp.Codigo</span></div>
+            <div class="field-info"><label>Nombre</label><span>@emp.NombreCompleto</span></div>
+            <div class="field-info"><label>Cédula</label><span>@emp.Cedula</span></div>
+            <div class="field-info"><label>Email</label><span>@emp.Email</span></div>
+            <div class="field-info"><label>Teléfono</label><span>@emp.Telefono</span></div>
+            <div class="field-info"><label>Departamento</label><span>@emp.DepartamentoDescripcion</span></div>
+            <div class="field-info"><label>Cargo</label><span>@emp.CargoDescripcion</span></div>
+        </div>
+    </div>
+}
+
+<div class="card form-card">
+    <h2>Acceso rápido</h2>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px">
+        <a asp-controller="Horas" asp-action="Registrar" class="btn btn-secondary">
+            Registrar horas reales
+        </a>
+        <a asp-controller="Account" asp-action="CambiarClave" class="btn btn-secondary">
+            Cambiar mi contraseña
+        </a>
+    </div>
+</div>

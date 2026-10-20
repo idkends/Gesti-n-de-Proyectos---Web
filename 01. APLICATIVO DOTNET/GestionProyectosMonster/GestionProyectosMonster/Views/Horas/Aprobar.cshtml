@@ -1,0 +1,198 @@
+@model List<GestionProyectosMonster.Models.RegistroHoras>
+@{
+    ViewData["Title"] = "Aprobación de Horas";
+    var pendientes  = Model.Where(r => r.Estado == "P").ToList();
+    var procesados  = Model.Where(r => r.Estado != "P").ToList();
+}
+
+<div class="page-heading">
+    <div>
+        <h1>Aprobación de Horas</h1>
+        <p>@pendientes.Count pendiente(s) · @procesados.Count procesado(s)</p>
+    </div>
+    <a asp-action="Reporte" class="btn btn-secondary">Ver reporte →</a>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="card card-padded">
+        <p class="muted">No hay registros de horas en tu área.</p>
+    </div>
+}
+else
+{
+    @if (pendientes.Any())
+    {
+        <div class="card table-card" style="margin-bottom:20px">
+            <div style="padding:16px 20px;border-bottom:1px solid var(--gbd)">
+                <strong>Pendientes de revisión</strong>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Semana</th>
+                        <th>Empleado</th>
+                        <th>Proyecto</th>
+                        <th>H. Estimadas</th>
+                        <th>H. Registradas</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in pendientes)
+                    {
+                        <tr>
+                            <td>@r.FechaSemana.ToString("dd/MM/yyyy")</td>
+                            <td>
+                                <strong>@r.NombreEmpleado</strong>
+                                <span class="code-badge" style="margin-left:6px">@r.CodigoEmpleado</span>
+                            </td>
+                            <td>@r.NombreProyecto</td>
+                            <td>@(r.HorasEstimadas.HasValue ? $"{r.HorasEstimadas:0.#} h" : "—")</td>
+                            <td><strong>@r.Horas.ToString("0.##") h</strong></td>
+                            <td class="actions">
+                                <form asp-action="CambiarEstado" method="post" style="display:contents"
+                                      id="form-aprobar-@r.Codigo">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="codigoRegistro" value="@r.Codigo" />
+                                    <input type="hidden" name="estado" value="A" />
+                                    <button type="button" class="btn btn-sm btn-secondary"
+                                            style="color:var(--ok);border-color:rgba(52 211 153/.3)"
+                                            onclick="abrirModalAprobar('@r.Codigo', '@r.NombreEmpleado', '@r.Horas.ToString("0.##")')">
+                                        Aprobar
+                                    </button>
+                                </form>
+                                <form asp-action="CambiarEstado" method="post" style="display:contents"
+                                      id="form-rechazar-@r.Codigo">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="codigoRegistro" value="@r.Codigo" />
+                                    <input type="hidden" name="estado" value="R" />
+                                    <input type="hidden" name="observaciones" id="obs_@r.Codigo" value="" />
+                                    <button type="button" class="btn btn-sm btn-danger"
+                                            onclick="abrirModalRechazar('@r.Codigo', '@r.NombreEmpleado')">
+                                        Rechazar
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    @if (procesados.Any())
+    {
+        <div class="card table-card">
+            <div style="padding:16px 20px;border-bottom:1px solid var(--gbd)">
+                <strong>Historial procesado</strong>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Semana</th>
+                        <th>Empleado</th>
+                        <th>Proyecto</th>
+                        <th>Horas</th>
+                        <th>Estado</th>
+                        <th>Observaciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in procesados)
+                    {
+                        <tr>
+                            <td>@r.FechaSemana.ToString("dd/MM/yyyy")</td>
+                            <td>@r.NombreEmpleado</td>
+                            <td>@r.NombreProyecto</td>
+                            <td>@r.Horas.ToString("0.##") h</td>
+                            <td>
+                                <span class="badge @(r.Estado == "A" ? "badge-active" : "badge-inactive")">
+                                    @r.EstadoDescripcion
+                                </span>
+                            </td>
+                            <td style="font-size:12px;color:var(--tx-3)">@r.Observaciones</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}
+
+<!-- Modal: Aprobar -->
+<div id="modal-aprobar" class="modal-backdrop" style="display:none" onclick="cerrarSiFondo(event,'modal-aprobar')">
+    <div class="modal-box">
+        <h2>Aprobar horas</h2>
+        <p id="modal-aprobar-desc">¿Confirmas la aprobación de las horas registradas?</p>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" onclick="cerrarModal('modal-aprobar')">Cancelar</button>
+            <button type="button" id="btn-confirmar-aprobar" class="btn btn-primary">Confirmar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Rechazar -->
+<div id="modal-rechazar" class="modal-backdrop" style="display:none" onclick="cerrarSiFondo(event,'modal-rechazar')">
+    <div class="modal-box">
+        <h2>Rechazar horas</h2>
+        <p id="modal-rechazar-desc">Indica el motivo del rechazo (opcional).</p>
+        <textarea id="modal-motivo" placeholder="Motivo del rechazo…" rows="3"></textarea>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" onclick="cerrarModal('modal-rechazar')">Cancelar</button>
+            <button type="button" id="btn-confirmar-rechazar" class="btn btn-danger">Rechazar</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+var _codigoActivo = null;
+
+function abrirModalAprobar(codigo, nombre, horas) {
+    _codigoActivo = codigo;
+    document.getElementById('modal-aprobar-desc').textContent =
+        '¿Confirmas la aprobación de ' + horas + ' h de ' + nombre + '?';
+    document.getElementById('modal-aprobar').style.display = 'flex';
+}
+
+function abrirModalRechazar(codigo, nombre) {
+    _codigoActivo = codigo;
+    document.getElementById('modal-rechazar-desc').textContent =
+        'Indica el motivo del rechazo para ' + nombre + ' (opcional).';
+    document.getElementById('modal-motivo').value = '';
+    document.getElementById('modal-rechazar').style.display = 'flex';
+    document.getElementById('modal-motivo').focus();
+}
+
+function cerrarModal(id) {
+    document.getElementById(id).style.display = 'none';
+    _codigoActivo = null;
+}
+
+function cerrarSiFondo(e, id) {
+    if (e.target === document.getElementById(id)) cerrarModal(id);
+}
+
+document.getElementById('btn-confirmar-aprobar').addEventListener('click', function () {
+    if (!_codigoActivo) return;
+    document.getElementById('modal-aprobar').style.display = 'none';
+    document.getElementById('form-aprobar-' + _codigoActivo).submit();
+});
+
+document.getElementById('btn-confirmar-rechazar').addEventListener('click', function () {
+    if (!_codigoActivo) return;
+    document.getElementById('obs_' + _codigoActivo).value =
+        document.getElementById('modal-motivo').value;
+    document.getElementById('modal-rechazar').style.display = 'none';
+    document.getElementById('form-rechazar-' + _codigoActivo).submit();
+});
+
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+        cerrarModal('modal-aprobar');
+        cerrarModal('modal-rechazar');
+    }
+});
+</script>
+}

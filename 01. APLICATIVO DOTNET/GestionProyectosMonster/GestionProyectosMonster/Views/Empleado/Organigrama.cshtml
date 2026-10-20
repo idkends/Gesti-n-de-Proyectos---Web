@@ -1,0 +1,86 @@
+@model Dictionary<string, Dictionary<string, List<GestionProyectosMonster.Models.Empleado>>>
+@{
+    ViewData["Title"] = "Organigrama";
+    int totalEmpleados = Model.Values.SelectMany(d => d.Values).Sum(l => l.Count);
+}
+
+<div class="page-heading">
+    <div>
+        <h1>Organigrama</h1>
+        <p>@totalEmpleados empleado(s) — estructura por departamento y cargo</p>
+    </div>
+    <div style="display:flex;gap:8px">
+        <a asp-action="Index" class="btn btn-secondary">← Listado</a>
+    </div>
+</div>
+
+<div class="card card-padded">
+    @if (!Model.Any())
+    {
+        <p class="muted">No hay empleados registrados.</p>
+    }
+    else
+    {
+        <div class="tree-toolbar">
+            <input class="tree-search" type="search" placeholder="Buscar empleado o código…"
+                   oninput="filtrarArbol(this.value)" />
+            <button type="button" class="btn btn-sm btn-secondary" onclick="expandirTodo()">Expandir todo</button>
+            <button type="button" class="btn btn-sm btn-secondary" onclick="contraerTodo()">Colapsar todo</button>
+        </div>
+
+        <div class="tree-container">
+            <ul class="tree-node">
+                @foreach (var dept in Model)
+                {
+                    int totalDept = dept.Value.Values.Sum(l => l.Count);
+                    <li class="tree-dept">
+                        <button type="button" class="tree-toggle" onclick="toggle(this)">
+                            <span class="tree-icon">&#9660;</span>
+                            <span>@dept.Key</span>
+                            <span class="tree-badge">@totalDept</span>
+                        </button>
+
+                        <ul class="tree-children tree-node">
+                            @foreach (var cargo in dept.Value)
+                            {
+                                <li class="tree-cargo">
+                                    <button type="button" class="tree-toggle" onclick="toggle(this)">
+                                        <span class="tree-icon">&#9660;</span>
+                                        <span>@cargo.Key</span>
+                                        <span class="tree-badge">@cargo.Value.Count</span>
+                                    </button>
+
+                                    <ul class="tree-children tree-node">
+                                        @foreach (var emp in cargo.Value)
+                                        {
+                                            <li class="tree-leaf-item"
+                                                data-nombre="@($"{emp.Nombre} {emp.Apellido}".ToLower())"
+                                                data-codigo="@emp.Codigo.ToLower()">
+                                                <div class="tree-leaf">
+                                                    @if (!string.IsNullOrEmpty(emp.FotoRuta))
+                                                    {
+                                                        <img class="avatar-sm"
+                                                             src="/@emp.FotoRuta"
+                                                             alt="@emp.NombreCompleto" />
+                                                    }
+                                                    <div>
+                                                        <strong style="font-size:13px;color:var(--tx)">@emp.Apellido, @emp.Nombre</strong>
+                                                        <span class="code-badge" style="display:block;margin-top:2px">@emp.Codigo</span>
+                                                    </div>
+                                                    @if (!string.IsNullOrEmpty(emp.Email))
+                                                    {
+                                                        <span style="font-size:12px;color:var(--tx-3);margin-left:auto">@emp.Email</span>
+                                                    }
+                                                </div>
+                                            </li>
+                                        }
+                                    </ul>
+                                </li>
+                            }
+                        </ul>
+                    </li>
+                }
+            </ul>
+        </div>
+    }
+</div>

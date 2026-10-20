@@ -1,0 +1,198 @@
+@model List<Usuario>
+@using GestionProyectosMonster.Models
+@{
+    ViewData["Title"] = "Gestión de Usuarios";
+    var perfiles = ViewBag.Perfiles as List<Perfil>;
+    var porPerfil = Model
+        .GroupBy(u => string.IsNullOrWhiteSpace(u.PerfilDescripcion) ? "Sin perfil" : u.PerfilDescripcion)
+        .OrderBy(g => g.Key)
+        .ToList();
+}
+
+<div class="page-heading">
+    <div>
+        <h1>Usuarios</h1>
+        <p>@Model.Count usuario(s) registrado(s)</p>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="cambiarVista('tabla')" id="btnTabla">Vista tabla</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="cambiarVista('arbol')" id="btnArbol">Vista árbol</button>
+        <button class="btn btn-primary" onclick="document.getElementById('frmNuevo').style.display='block'">
+            + Nuevo Usuario
+        </button>
+    </div>
+</div>
+
+<!-- Formulario nuevo usuario -->
+<div id="frmNuevo" class="card form-card" style="display:none">
+    <h2>Crear Usuario</h2>
+    <form asp-action="Crear" method="post">
+        @Html.AntiForgeryToken()
+        <div class="form-grid">
+            <div class="field">
+                <label>Código Empleado <span class="req">*</span></label>
+                <input name="codigoEmpleado" placeholder="EMP001" required style="text-transform:uppercase" />
+            </div>
+            <div class="field">
+                <label>Contraseña <span class="req">*</span></label>
+                <input name="password" type="password" required />
+                <p class="field-help">Mínimo 8 chars, mayúscula, minúscula y número.</p>
+            </div>
+            <div class="field">
+                <label>Perfil <span class="req">*</span></label>
+                <select name="perfilCodigo" required>
+                    <option value="">— Seleccione —</option>
+                    @if (perfiles != null)
+                    {
+                        @foreach (var p in perfiles)
+                        {
+                            <option value="@p.Codigo">@p.Descripcion</option>
+                        }
+                    }
+                </select>
+            </div>
+        </div>
+        <div class="form-footer">
+            <button type="button" class="btn btn-secondary"
+                    onclick="document.getElementById('frmNuevo').style.display='none'">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Crear Usuario</button>
+        </div>
+    </form>
+</div>
+
+<!-- Vista tabla -->
+<div id="vistaTabla">
+    <div class="card table-card">
+        @if (Model.Count == 0)
+        {
+            <p class="muted" style="padding:24px">No hay usuarios registrados.</p>
+        }
+        else
+        {
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Empleado</th>
+                        <th>Perfil</th>
+                        <th>Estado</th>
+                        <th>Último acceso</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var u in Model)
+                    {
+                        <tr>
+                            <td><span class="code-badge">@u.CodigoEmpleado</span></td>
+                            <td>@u.NombreEmpleado</td>
+                            <td>@u.PerfilDescripcion</td>
+                            <td>
+                                <span class="badge @(u.EstadoCodigo == "A" ? "badge-active" : "badge-inactive")">
+                                    @u.EstadoDescripcion
+                                </span>
+                            </td>
+                            <td>@u.FechaModificacion.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td class="actions">
+                                <!-- Cambiar perfil -->
+                                <form asp-action="CambiarPerfil" method="post" style="display:inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="codigoEmpleado" value="@u.CodigoEmpleado" />
+                                    <select name="perfilCodigo" onchange="this.form.submit()" title="Cambiar perfil">
+                                        @if (perfiles != null)
+                                        {
+                                            @foreach (var p in perfiles)
+                                            {
+                                                <option value="@p.Codigo"
+                                                        selected="@(p.Codigo == u.PerfilCodigo ? "selected" : null)">
+                                                    @p.Descripcion
+                                                </option>
+                                            }
+                                        }
+                                    </select>
+                                </form>
+                                <!-- Cambiar estado -->
+                                <form asp-action="CambiarEstado" method="post" style="display:inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="codigoEmpleado" value="@u.CodigoEmpleado" />
+                                    <input type="hidden" name="estado" value="@(u.EstadoCodigo == "A" ? "I" : "A")" />
+                                    <button type="submit" class="btn btn-sm @(u.EstadoCodigo == "A" ? "btn-warning" : "btn-secondary")"
+                                            onclick="return confirm('¿Cambiar estado del usuario?')">
+                                        @(u.EstadoCodigo == "A" ? "Desactivar" : "Activar")
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+<!-- Vista árbol (agrupada por perfil) -->
+<div id="vistaArbol" style="display:none">
+    <div class="card card-padded">
+        @if (!porPerfil.Any())
+        {
+            <p class="muted">No hay usuarios registrados.</p>
+        }
+        else
+        {
+            <div class="tree-toolbar">
+                <input class="tree-search" type="search" placeholder="Buscar usuario o código…"
+                       oninput="filtrarArbol(this.value)" />
+                <button type="button" class="btn btn-sm btn-secondary" onclick="expandirTodo()">Expandir todo</button>
+                <button type="button" class="btn btn-sm btn-secondary" onclick="contraerTodo()">Colapsar todo</button>
+            </div>
+
+            <div class="tree-container">
+                <ul class="tree-node">
+                    @foreach (var grupo in porPerfil)
+                    {
+                        var usuarios = grupo.ToList();
+                        <li class="tree-dept">
+                            <button type="button" class="tree-toggle" onclick="toggle(this)">
+                                <span class="tree-icon">&#9660;</span>
+                                <span>@grupo.Key</span>
+                                <span class="tree-badge">@usuarios.Count</span>
+                            </button>
+
+                            <ul class="tree-children tree-node">
+                                @foreach (var u in usuarios)
+                                {
+                                    <li class="tree-leaf-item"
+                                        data-nombre="@u.NombreEmpleado.ToLower()"
+                                        data-codigo="@u.CodigoEmpleado.ToLower()">
+                                        <div class="tree-leaf">
+                                            <div style="flex:1">
+                                                <strong style="font-size:13px;color:var(--tx)">@u.NombreEmpleado</strong>
+                                                <span class="code-badge" style="display:inline-block;margin-left:8px">@u.CodigoEmpleado</span>
+                                            </div>
+                                            <span class="tree-status-badge @(u.EstadoCodigo == "A" ? "active" : "inactive")">
+                                                @u.EstadoDescripcion
+                                            </span>
+                                        </div>
+                                    </li>
+                                }
+                            </ul>
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+<script>
+function cambiarVista(vista) {
+    document.getElementById('vistaTabla').style.display = vista === 'tabla' ? '' : 'none';
+    document.getElementById('vistaArbol').style.display = vista === 'arbol' ? '' : 'none';
+    document.getElementById('btnTabla').classList.toggle('btn-primary', vista === 'tabla');
+    document.getElementById('btnTabla').classList.toggle('btn-secondary', vista !== 'tabla');
+    document.getElementById('btnArbol').classList.toggle('btn-primary', vista === 'arbol');
+    document.getElementById('btnArbol').classList.toggle('btn-secondary', vista !== 'arbol');
+}
+</script>
+}

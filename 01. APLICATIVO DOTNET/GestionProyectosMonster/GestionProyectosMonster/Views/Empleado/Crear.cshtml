@@ -1,0 +1,149 @@
+@model Empleado
+@{
+    ViewData["Title"] = "Nuevo Empleado";
+    string paso = ViewBag.Paso as string ?? "general";
+    var cargos = ViewBag.Cargos as List<GestionProyectosMonster.Models.Cargo> ?? [];
+}
+
+<div class="page-heading">
+    <h1>Nuevo Empleado</h1>
+    <p>Complete todos los pasos del formulario</p>
+</div>
+
+<!-- Stepper -->
+<div class="stepper">
+    <div class="step @(paso == "general" ? "active" : "done")">
+        <span class="step-num">1</span><span>Datos Generales</span>
+    </div>
+</div>
+
+<div class="card form-card">
+    <form asp-action="Crear" method="post" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Codigo" />
+        <input type="hidden" name="paso" value="general" />
+
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert alert-error">
+                @Html.ValidationSummary(false)
+            </div>
+        }
+
+        <div class="form-grid">
+            <div class="field">
+                <label>Código</label>
+                <input asp-for="Codigo" readonly class="readonly" />
+            </div>
+            <div class="field">
+                <label>Nombres <span class="req">*</span></label>
+                <input asp-for="Nombre" required />
+            </div>
+            <div class="field">
+                <label>Apellidos <span class="req">*</span></label>
+                <input asp-for="Apellido" required />
+            </div>
+            <div class="field">
+                <label>Cédula <span class="req">*</span></label>
+                <input asp-for="Cedula" maxlength="10" required />
+            </div>
+            <div class="field">
+                <label>Email <span class="req">*</span></label>
+                <input asp-for="Email" type="email" required />
+            </div>
+            <div class="field">
+                <label>Teléfono <span class="req">*</span></label>
+                <input asp-for="Telefono" maxlength="15" required />
+            </div>
+            <div class="field">
+                <label>Fecha de Nacimiento <span class="req">*</span></label>
+                <input asp-for="FechaNacimiento" type="date" required />
+            </div>
+            <div class="field">
+                <label>Fecha de Ingreso <span class="req">*</span></label>
+                <input asp-for="FechaSalida" type="date" required />
+            </div>
+            <div class="field">
+                <label>Sexo <span class="req">*</span></label>
+                <select asp-for="SexoCodigo" asp-items="@(new SelectList(ViewBag.Sexos as Dictionary<string,string>, "Key", "Value"))" required>
+                    <option value="">— Seleccione —</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Estado Civil</label>
+                <select asp-for="EstadoCivilCodigo" asp-items="@(new SelectList(ViewBag.EstadosCiviles as Dictionary<string,string>, "Key", "Value"))">
+                    <option value="">— Seleccione —</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Cargo <span class="req">*</span></label>
+                <select asp-for="CargoCodigo" id="selCargo" required onchange="sincronizarDepto(this)">
+                    <option value="">— Seleccione cargo —</option>
+                    @foreach (var c in cargos)
+                    {
+                        <option value="@c.Codigo" data-dep="@c.DepartamentoCodigo">
+                            @c.DepartamentoDescripcion — @c.Descripcion
+                        </option>
+                    }
+                </select>
+            </div>
+            <div class="field">
+                <label>Departamento <span class="req">*</span></label>
+                <select asp-for="DepartamentoCodigo" id="selDep"
+                        asp-items="@(new SelectList(ViewBag.Departamentos as Dictionary<string,string>, "Key", "Value"))" required>
+                    <option value="">— Seleccione —</option>
+                </select>
+            </div>
+            <div class="field full">
+                <label>Dirección <span class="req">*</span></label>
+                <input asp-for="Direccion" required />
+            </div>
+            <div class="field">
+                <label>Pasaporte</label>
+                <input asp-for="Pasaporte" />
+            </div>
+            <div class="field">
+                <label>Foto</label>
+                <input type="file" name="foto" accept="image/*" />
+            </div>
+        </div>
+
+        @if (User.IsInRole("Administrador"))
+        {
+            <div style="margin-top:18px;padding:16px;border:1px solid var(--border);border-radius:8px;background:var(--surface)">
+                <p style="font-weight:700;font-size:13px;margin-bottom:12px">
+                    Contraseña de acceso al sistema
+                </p>
+                <div class="form-grid">
+                    <div class="field">
+                        <label>Contraseña inicial</label>
+                        <input name="clave" type="password" autocomplete="new-password"
+                               placeholder="Mín. 9 chars, 1 mayúscula, 1 número" />
+                    </div>
+                    <div class="field">
+                        <label>Confirmar contraseña</label>
+                        <input name="confirmarClave" type="password" autocomplete="new-password" />
+                    </div>
+                </div>
+                <p style="font-size:12px;color:var(--tx-3);margin-top:8px">
+                    Si deja los campos vacíos, se asignará una contraseña temporal automática que podrá cambiar después
+                    en <strong>Gestión de Contraseñas</strong>.
+                </p>
+            </div>
+        }
+
+        <div class="form-footer">
+            <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">Guardar y Continuar →</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+<script>
+function sincronizarDepto(sel) {
+    const dep = sel.options[sel.selectedIndex]?.dataset?.dep;
+    if (dep) document.getElementById('selDep').value = dep;
+}
+</script>
+}

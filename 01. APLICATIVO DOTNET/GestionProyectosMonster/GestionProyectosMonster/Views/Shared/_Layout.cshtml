@@ -1,0 +1,362 @@
+@inject IOpcionesService _opcSvc
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — Gestión Monster</title>
+    <link rel="stylesheet" href="~/css/estilos.css" asp-append-version="true" />
+</head>
+<body>
+
+@if (User.Identity?.IsAuthenticated == true)
+{
+    string rol    = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value    ?? "";
+    string nombre = User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? "";
+    string emp    = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? "";
+
+    <div class="app-shell">
+
+        @* Backdrop para cerrar sidebar en mobile *@
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+        <aside class="sidebar" id="sidebar">
+
+            <div class="sidebar-top">
+                <a class="sidebar-brand" asp-controller="Home" asp-action="Index">
+                    <div class="brand-mark">
+                        <img src="~/recursos/Sullivan.png" alt="Monster" class="brand-mark-img" />
+                    </div>
+                    <div class="brand-text">
+                        <strong>Monster</strong>
+                        <span class="sidebar-brand-sub">Gestión de Proyectos</span>
+                    </div>
+                </a>
+                <button class="sidebar-close-btn" id="sidebarClose" type="button" aria-label="Cerrar menú">✕</button>
+            </div>
+
+            <div class="sidebar-user">
+                <span class="sidebar-user-label">Sesión activa</span>
+                <strong class="sidebar-user-name">@nombre</strong>
+                <span class="role-badge">@rol</span>
+            </div>
+
+            <nav class="side-nav">
+                <a asp-controller="Home" asp-action="Index">Inicio</a>
+
+                @* ══ Personal ══════════════════════════════════════════════════ *@
+                @if (_opcSvc.TieneOpcionCualquiera(emp,
+                    OpcionesService.OPC_DEPARTAMENTOS,    OpcionesService.OPC_GESTION_PERSONAL,
+                    OpcionesService.OPC_FAMILIARES,       OpcionesService.OPC_ORGANIGRAMA,
+                    OpcionesService.OPC_REPORTE_PERSONAL))
+                {
+                    <div class="nav-group" id="ng-personal">
+                        <button class="nav-group-btn" type="button"
+                                onclick="toggleGrupo('ng-personal')"
+                                aria-expanded="true" aria-controls="ng-personal-items">
+                            <svg class="ng-icon" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                <circle cx="9" cy="7" r="4"/>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                            </svg>
+                            Personal
+                            <span class="ng-arrow">&#9660;</span>
+                        </button>
+                        <div class="nav-group-items" id="ng-personal-items">
+                            @if (_opcSvc.TieneOpcionCualquiera(emp, OpcionesService.OPC_DEPARTAMENTOS, OpcionesService.OPC_GESTION_PERSONAL))
+                            {
+                                <div class="nav-sub-group" id="nsg-personal-tablas">
+                                    <button class="nav-sub-title" type="button" onclick="toggleSubGrupo('nsg-personal-tablas')" aria-expanded="true">
+                                        Tablas Básicas <span class="nsg-arrow">&#9660;</span>
+                                    </button>
+                                    <div class="nav-sub-items" id="nsg-personal-tablas-items">
+                                        @if (_opcSvc.TieneOpcion(emp, OpcionesService.OPC_DEPARTAMENTOS))
+                                        {
+                                            <a asp-controller="Departamento" asp-action="Index" class="nav-item">Departamentos</a>
+                                        }
+                                        @if (_opcSvc.TieneOpcion(emp, OpcionesService.OPC_GESTION_PERSONAL))
+                                        {
+                                            <a asp-controller="Empleado" asp-action="Index" class="nav-item">Gestión de Personal</a>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                            @if (_opcSvc.TieneOpcionCualquiera(emp, OpcionesService.OPC_ORGANIGRAMA, OpcionesService.OPC_FAMILIARES))
+                            {
+                                <div class="nav-sub-group" id="nsg-personal-procesos">
+                                    <button class="nav-sub-title" type="button" onclick="toggleSubGrupo('nsg-personal-procesos')" aria-expanded="true">
+                                        Procesos <span class="nsg-arrow">&#9660;</span>
+                                    </button>
+                                    <div class="nav-sub-items" id="nsg-personal-procesos-items">
+                                        @if (_opcSvc.TieneOpcion(emp, OpcionesService.OPC_ORGANIGRAMA))
+                                        {
+                                            <a asp-controller="Empleado" asp-action="Organigrama" class="nav-item">Organigrama</a>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                            @if (_opcSvc.TieneOpcion(emp, OpcionesService.OPC_REPORTE_PERSONAL))
+                            {
+                                <div class="nav-sub-group" id="nsg-personal-reportes">
+                                    <button class="nav-sub-title" type="button" onclick="toggleSubGrupo('nsg-personal-reportes')" aria-expanded="true">
+                                        Reportes <span class="nsg-arrow">&#9660;</span>
+                                    </button>
+                                    <div class="nav-sub-items" id="nsg-personal-reportes-items">
+                                        <a asp-controller="Reporte" asp-action="Index" class="nav-item">Reporte de Personal</a>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                @* ══ Gestión de Proyectos ══════════════════════════════════════ *@
+                @if (_opcSvc.TieneOpcionCualquiera(emp,
+                    OpcionesService.OPC_PROYECTOS,        OpcionesService.OPC_ASIGNAR_PERSONAL,
+                    OpcionesService.OPC_APROBACION_HORAS, OpcionesService.OPC_REPORTES_HORAS,
+                    OpcionesService.OPC_REGISTRAR_HORAS))
+                {
+                    <div class="nav-group" id="ng-proyectos">
+                        <button class="nav-group-btn" type="button"
+                                onclick="toggleGrupo('ng-proyectos')"
+                                aria-expanded="true" aria-controls="ng-proyectos-items">
+                            <svg class="ng-icon" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                                <rect x="2" y="3" width="20" height="14" rx="2"/>
+                                <path d="M8 21h8M12 17v4"/>
+                                <circle cx="12" cy="10" r="3"/>
+                            </svg>
+                            Proyectos
+                            <span class="ng-arrow">&#9660;</span>
+                        </button>
+                        <div class="nav-group-items" id="ng-proyectos-items">
+                            @if (_opcSvc.TieneOpcion(emp, OpcionesService.OPC_PROYECTOS))
+                            {
+                                <div class="nav-sub-group" id="nsg-proyectos-tablas">
+                                    <button class="nav-sub-title" type="button" onclick="toggleSubGrupo('nsg-proyectos-tablas')" aria-expanded="true">
+                                        Tablas Básicas <span class="nsg-arrow">&#9660;</span>
+                                    </button>
+                                    <div class="nav-sub-items" id="nsg-proyectos-tablas-items">
+                                        <a asp-controller="Proyecto" asp-action="Index" class="nav-item">Gestión de Proyectos</a>
+                                    </div>
+                                </div>
+                            }
+                            @if (_opcSvc.TieneOpcionCualquiera(emp, OpcionesService.OPC_ASIGNAR_PERSONAL, OpcionesService.OPC_APROBACION_HORAS, OpcionesService.OPC_REGISTRAR_HORAS))
+                            {
+                                <div class="nav-sub-group" id="nsg-proyectos-procesos">
+                                    <button class="nav-sub-title" type="button" onclick="toggleSubGrupo('nsg-proyectos-procesos')" aria-expanded="true">
+                                        Procesos <span class="nsg-arrow">&#9660;</span>
+                                    </button>
+                                    <div class="nav-sub-items" id="nsg-proyectos-procesos-items">
+                                        @if (_opcSvc.TieneOpcion(emp, OpcionesService.OPC_ASIGNAR_PERSONAL))
+                                        {
+                                            <a asp-controller="Proyecto" asp-action="AsignarPersonal" class="nav-item">Asignación de Personal</a>
+                                        }
+                                        @if (_opcSvc.TieneOpcion(emp, OpcionesService.OPC_APROBACION_HORAS))
+                                        {
+                                            <a asp-controller="Horas" asp-action="Aprobar" class="nav-item">Aprobación de Horas</a>
+                                        }
+                                        @if (_opcSvc.TieneOpcion(emp, OpcionesService.OPC_REGISTRAR_HORAS))
+                                        {
+                                            <a asp-controller="Horas" asp-action="Registrar" class="nav-item">Registrar Horas Reales</a>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                            @if (_opcSvc.TieneOpcion(emp, OpcionesService.OPC_REPORTES_HORAS))
+                            {
+                                <div class="nav-sub-group" id="nsg-proyectos-reportes">
+                                    <button class="nav-sub-title" type="button" onclick="toggleSubGrupo('nsg-proyectos-reportes')" aria-expanded="true">
+                                        Reportes <span class="nsg-arrow">&#9660;</span>
+                                    </button>
+                                    <div class="nav-sub-items" id="nsg-proyectos-reportes-items">
+                                        <a asp-controller="Horas" asp-action="Reporte" class="nav-item">Reportes de Horas</a>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                @* ══ Seguridad ═════════════════════════════════════════════════ *@
+                @if (_opcSvc.TieneOpcionCualquiera(emp,
+                    OpcionesService.OPC_GESTION_USUARIOS, OpcionesService.OPC_ASIGNAR_PERFILES,
+                    OpcionesService.OPC_GESTION_CLAVE,    OpcionesService.OPC_ASIGNAR_OPCIONES,
+                    OpcionesService.OPC_CAMBIAR_CLAVE,    OpcionesService.OPC_GESTION_PERFILES))
+                {
+                    <div class="nav-group" id="ng-seguridad">
+                        <button class="nav-group-btn" type="button"
+                                onclick="toggleGrupo('ng-seguridad')"
+                                aria-expanded="true" aria-controls="ng-seguridad-items">
+                            <svg class="ng-icon" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                            </svg>
+                            Seguridad
+                            <span class="ng-arrow">&#9660;</span>
+                        </button>
+                        <div class="nav-group-items" id="ng-seguridad-items">
+                            @if (_opcSvc.TieneOpcionCualquiera(emp, OpcionesService.OPC_GESTION_USUARIOS, OpcionesService.OPC_GESTION_PERFILES))
+                            {
+                                <div class="nav-sub-group" id="nsg-seguridad-tablas">
+                                    <button class="nav-sub-title" type="button" onclick="toggleSubGrupo('nsg-seguridad-tablas')" aria-expanded="true">
+                                        Tablas Básicas <span class="nsg-arrow">&#9660;</span>
+                                    </button>
+                                    <div class="nav-sub-items" id="nsg-seguridad-tablas-items">
+                                        @if (_opcSvc.TieneOpcion(emp, OpcionesService.OPC_GESTION_USUARIOS))
+                                        {
+                                            <a asp-controller="Usuario" asp-action="Index" class="nav-item">Gestión de Usuarios</a>
+                                        }
+                                        @if (_opcSvc.TieneOpcion(emp, OpcionesService.OPC_GESTION_PERFILES))
+                                        {
+                                            <a asp-controller="Perfil" asp-action="Index" class="nav-item">Gestión de Perfiles</a>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                            @if (_opcSvc.TieneOpcionCualquiera(emp, OpcionesService.OPC_ASIGNAR_PERFILES, OpcionesService.OPC_ASIGNAR_OPCIONES, OpcionesService.OPC_GESTION_CLAVE, OpcionesService.OPC_CAMBIAR_CLAVE))
+                            {
+                                <div class="nav-sub-group" id="nsg-seguridad-procesos">
+                                    <button class="nav-sub-title" type="button" onclick="toggleSubGrupo('nsg-seguridad-procesos')" aria-expanded="true">
+                                        Procesos <span class="nsg-arrow">&#9660;</span>
+                                    </button>
+                                    <div class="nav-sub-items" id="nsg-seguridad-procesos-items">
+                                        @if (_opcSvc.TieneOpcion(emp, OpcionesService.OPC_ASIGNAR_PERFILES))
+                                        {
+                                            <a asp-controller="Usuario" asp-action="AsignarPerfil" class="nav-item">Asignar Usuarios al Perfil</a>
+                                        }
+                                        @if (_opcSvc.TieneOpcion(emp, OpcionesService.OPC_ASIGNAR_OPCIONES))
+                                        {
+                                            <a asp-controller="Perfil" asp-action="AsignarOpciones" class="nav-item">Asignar Opciones al Perfil</a>
+                                        }
+                                        @if (_opcSvc.TieneOpcion(emp, OpcionesService.OPC_GESTION_CLAVE))
+                                        {
+                                            <a asp-controller="Usuario" asp-action="GestionarClave" class="nav-item">Gestión de Contraseñas</a>
+                                        }
+                                        @if (_opcSvc.TieneOpcion(emp, OpcionesService.OPC_CAMBIAR_CLAVE))
+                                        {
+                                            <a asp-controller="Account" asp-action="CambiarClave" class="nav-item">Cambiar Mi Contraseña</a>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </nav>
+
+            <form asp-controller="Account" asp-action="Logout" method="post" class="sidebar-logout">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn-sidebar-logout">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    Salir
+                </button>
+            </form>
+        </aside>
+
+        <div class="main-wrapper">
+            <header class="mobile-topbar">
+                <button class="hamburger-btn" id="hamburgerBtn" type="button" aria-label="Abrir menú">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <a asp-controller="Home" asp-action="Index" class="mobile-brand">
+                    <div class="brand-mark">
+                        <img src="~/recursos/Sullivan.png" alt="Monster" class="brand-mark-img" />
+                    </div>
+                    <strong>Monster</strong>
+                </a>
+                <span class="role-badge mobile-user-badge">@rol</span>
+            </header>
+
+            <main class="main-area">
+                @if (TempData["Exito"] != null)
+                {
+                    <div class="alert alert-success">@TempData["Exito"]</div>
+                }
+                @if (TempData["Error"] != null)
+                {
+                    <div class="alert alert-error">@TempData["Error"]</div>
+                }
+                @RenderBody()
+            </main>
+        </div>
+
+    </div>
+}
+else
+{
+    <main class="main-content">
+        @RenderBody()
+    </main>
+}
+
+<script src="~/js/app.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts", required: false)
+<script>
+(function () {
+    /* ── Sidebar state (localStorage) ── */
+    var STORE_KEY = 'sidebar_groups';
+    function getState() { try { return JSON.parse(localStorage.getItem(STORE_KEY) || '{}'); } catch(e) { return {}; } }
+    function saveState(st) { try { localStorage.setItem(STORE_KEY, JSON.stringify(st)); } catch(e) {} }
+
+    window.toggleGrupo = function(id) {
+        var items = document.getElementById(id + '-items');
+        var btn   = document.querySelector('#' + id + ' .nav-group-btn');
+        if (!items || !btn) return;
+        var collapsed = items.classList.toggle('ng-collapsed');
+        btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        var st = getState(); st[id] = collapsed ? 'closed' : 'open'; saveState(st);
+    };
+
+    window.toggleSubGrupo = function(id) {
+        var items = document.getElementById(id + '-items');
+        var btn   = document.querySelector('#' + id + ' > .nav-sub-title');
+        if (!items || !btn) return;
+        var collapsed = items.classList.toggle('nsg-collapsed');
+        btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        var st = getState(); st[id] = collapsed ? 'closed' : 'open'; saveState(st);
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
+        var st = getState();
+
+        ['ng-personal', 'ng-proyectos', 'ng-seguridad'].forEach(function(id) {
+            if (st[id] === 'closed') {
+                var items = document.getElementById(id + '-items');
+                var btn   = document.querySelector('#' + id + ' .nav-group-btn');
+                if (items) {
+                    items.style.transition = 'none';
+                    items.classList.add('ng-collapsed');
+                    requestAnimationFrame(function() { items.style.transition = ''; });
+                }
+                if (btn) btn.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        ['nsg-personal-tablas','nsg-personal-procesos','nsg-personal-reportes',
+         'nsg-proyectos-tablas','nsg-proyectos-procesos','nsg-proyectos-reportes',
+         'nsg-seguridad-tablas','nsg-seguridad-procesos'].forEach(function(id) {
+            if (st[id] === 'closed') {
+                var items = document.getElementById(id + '-items');
+                var btn   = document.querySelector('#' + id + ' > .nav-sub-title');
+                if (items) {
+                    items.style.transition = 'none';
+                    items.classList.add('nsg-collapsed');
+                    requestAnimationFrame(function() { items.style.transition = ''; });
+                }
+                if (btn) btn.setAttribute('aria-expanded', 'false');
+            }
+        });
+    });
+}());
+</script>
+</body>
+</html>

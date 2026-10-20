@@ -1,0 +1,98 @@
+@model List<Departamento>
+@{
+    ViewData["Title"] = "Departamentos";
+}
+
+<div class="page-heading">
+    <div>
+        <h1>Departamentos</h1>
+        <p>@Model.Count departamento(s) registrado(s)</p>
+    </div>
+    <button class="btn btn-primary" onclick="mostrarFormNuevo()">+ Nuevo</button>
+</div>
+
+<!-- Formulario inline para nuevo/editar -->
+<div id="frmPanel" class="card form-card" style="display:none">
+    <h2 id="frmTitulo">Nuevo Departamento</h2>
+    <form asp-action="Guardar" method="post">
+        @Html.AntiForgeryToken()
+        <div class="form-grid">
+            <div class="field">
+                <label>Código (3 caracteres) <span class="req">*</span></label>
+                <input id="fCodigo" name="Codigo" maxlength="3" required style="text-transform:uppercase" />
+            </div>
+            <div class="field">
+                <label>Descripción <span class="req">*</span></label>
+                <input id="fDescripcion" name="Descripcion" maxlength="50" required />
+            </div>
+        </div>
+        <div class="form-footer">
+            <button type="button" class="btn btn-secondary" onclick="ocultarForm()">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+    </form>
+</div>
+
+<div class="card table-card">
+    @if (Model.Count == 0)
+    {
+        <p class="muted" style="padding:24px">No hay departamentos registrados.</p>
+    }
+    else
+    {
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Descripción</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var dep in Model)
+                {
+                    <tr>
+                        <td><span class="code-badge">@dep.Codigo</span></td>
+                        <td>@dep.Descripcion</td>
+                        <td class="actions">
+                            <button class="btn btn-sm btn-secondary"
+                                    onclick="editarDep('@dep.Codigo','@dep.Descripcion')">Editar</button>
+                            <form asp-action="Eliminar" method="post" style="display:inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="codigo" value="@dep.Codigo" />
+                                <button type="submit" class="btn btn-sm btn-danger"
+                                        onclick="return confirm('¿Eliminar departamento @dep.Codigo?')">
+                                    Eliminar
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@section Scripts {
+<script>
+function mostrarFormNuevo() {
+    document.getElementById('frmTitulo').textContent = 'Nuevo Departamento';
+    document.getElementById('fCodigo').readOnly = false;
+    document.getElementById('fCodigo').value = '';
+    document.getElementById('fDescripcion').value = '';
+    document.getElementById('frmPanel').style.display = 'block';
+    document.getElementById('fCodigo').focus();
+}
+function editarDep(cod, desc) {
+    document.getElementById('frmTitulo').textContent = 'Editar Departamento';
+    document.getElementById('fCodigo').value = cod;
+    document.getElementById('fCodigo').readOnly = true;
+    document.getElementById('fDescripcion').value = desc;
+    document.getElementById('frmPanel').style.display = 'block';
+    document.getElementById('fDescripcion').focus();
+}
+function ocultarForm() {
+    document.getElementById('frmPanel').style.display = 'none';
+}
+</script>
+}

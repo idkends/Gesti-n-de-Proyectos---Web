@@ -1,0 +1,105 @@
+@model List<(string CodigoProyecto, string NombreProyecto, decimal HorasEstimadas, decimal HorasRealesAprobadas, int TotalRegistros)>
+@{
+    ViewData["Title"] = "Reporte de Horas";
+    string generadoPor = ViewBag.GeneradoPor ?? "Sistema";
+    string fechaGen    = ViewBag.FechaGen    ?? DateTime.Now.ToString("dd/MM/yyyy HH:mm");
+    decimal totalEst   = Model.Sum(r => r.HorasEstimadas);
+    decimal totalReal  = Model.Sum(r => r.HorasRealesAprobadas);
+}
+
+<div class="report-toolbar">
+    <div>
+        <h1 style="font-size:20px">Reporte de Horas</h1>
+        <p>Estimadas vs. reales aprobadas por proyecto</p>
+    </div>
+    <div style="display:flex;gap:8px;margin-left:auto">
+        <a asp-action="Aprobar" class="btn btn-secondary">← Aprobación</a>
+        <button type="button" class="btn btn-primary" onclick="window.print()">Imprimir / PDF</button>
+    </div>
+</div>
+
+<div class="report-page">
+
+    <div class="report-header">
+        <img class="report-logo" src="~/recursos/Sullivan.png" alt="Monster" onerror="this.style.display='none'" />
+        <div class="report-title-block">
+            <h1>Reporte de Horas — Estimadas vs. Reales</h1>
+            <div class="report-subtitle">Gestión de Proyectos Monster</div>
+            <div class="report-meta">
+                <span><strong>Fecha:</strong> @fechaGen</span>
+                <span><strong>Generado por:</strong> @generadoPor</span>
+                <span><strong>Proyectos:</strong> @Model.Count</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="stat-row">
+        <div class="stat-box stat-total">
+            <span class="stat-num">@Model.Count</span>
+            <span class="stat-lbl">Proyectos</span>
+        </div>
+        <div class="stat-box stat-activo">
+            <span class="stat-num">@totalEst.ToString("0.#")</span>
+            <span class="stat-lbl">H. Estimadas totales</span>
+        </div>
+        <div class="stat-box stat-inact">
+            <span class="stat-num">@totalReal.ToString("0.#")</span>
+            <span class="stat-lbl">H. Reales aprobadas</span>
+        </div>
+        <div class="stat-box stat-sin">
+            @{
+                decimal diff = totalReal - totalEst;
+                string diffStr = (diff >= 0 ? "+" : "") + diff.ToString("0.#");
+            }
+            <span class="stat-num" style="color:@(diff > 0 ? "#dc2626" : "#059669")">@diffStr</span>
+            <span class="stat-lbl">Diferencia</span>
+        </div>
+    </div>
+
+    <table class="report-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Código</th>
+                <th>Proyecto</th>
+                <th>H. Estimadas</th>
+                <th>H. Reales Aprobadas</th>
+                <th>Diferencia</th>
+                <th>Registros</th>
+                <th>Avance</th>
+            </tr>
+        </thead>
+        <tbody>
+            @{int fila = 1;}
+            @foreach (var (cod, nombre, est, real, total) in Model)
+            {
+                decimal dif = real - est;
+                decimal pct = est > 0 ? Math.Min(real / est * 100, 100) : 0;
+                string difColor = dif > 0 ? "#b91c1c" : "#15803d";
+
+                <tr>
+                    <td style="color:#94a3b8;font-size:11px">@fila</td>
+                    <td><span class="rpt-code">@cod</span></td>
+                    <td><strong>@nombre</strong></td>
+                    <td>@est.ToString("0.#") h</td>
+                    <td>@real.ToString("0.#") h</td>
+                    <td style="color:@difColor;font-weight:600">
+                        @((dif >= 0 ? "+" : "") + dif.ToString("0.#")) h
+                    </td>
+                    <td>@total</td>
+                    <td style="min-width:100px">
+                        <div style="background:#e2e8f0;border-radius:999px;height:6px;width:100px">
+                            <div style="background:#A8FF35;height:6px;border-radius:999px;width:@((int)pct)px;max-width:100px"></div>
+                        </div>
+                        <span style="font-size:11px;color:#64748b">@((int)pct)%</span>
+                    </td>
+                </tr>
+                fila++;
+            }
+        </tbody>
+    </table>
+
+    <div class="report-footer">
+        Documento de uso interno · Gestión de Proyectos Monster · Generado el @fechaGen
+    </div>
+</div>

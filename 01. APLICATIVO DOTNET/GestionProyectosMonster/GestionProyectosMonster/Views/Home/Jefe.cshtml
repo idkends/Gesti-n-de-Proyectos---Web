@@ -1,0 +1,64 @@
+@{
+    ViewData["Title"] = "Panel Jefe de Departamento";
+    var proyectos = ViewBag.Proyectos as List<GestionProyectosMonster.Models.Proyecto> ?? [];
+    int totalEmp  = ViewBag.TotalEmpleados ?? 0;
+}
+
+<div class="page-heading">
+    <div>
+        <h1>Mis Proyectos</h1>
+        <p>Bienvenido, @User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value</p>
+    </div>
+</div>
+
+<!-- Estadísticas -->
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:24px">
+    <div class="card card-padded" style="text-align:center">
+        <p style="font-size:12px;color:var(--tx-3);margin-bottom:4px">Total proyectos</p>
+        <strong style="font-size:32px;color:var(--brand)">@proyectos.Count</strong>
+    </div>
+    <div class="card card-padded" style="text-align:center">
+        <p style="font-size:12px;color:var(--tx-3);margin-bottom:4px">Empleados disponibles</p>
+        <strong style="font-size:32px;color:var(--brand)">@totalEmp</strong>
+    </div>
+</div>
+
+<div class="module-grid">
+    @if (proyectos.Count == 0)
+    {
+        <div class="module-card">
+            <div class="card-content">
+                <div class="module-icon">📋</div>
+                <h2>Sin proyectos</h2>
+                <p>No tienes proyectos asignados aún.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        @foreach (var p in proyectos)
+        {
+            <a class="module-card" asp-controller="Proyecto" asp-action="Asignar" asp-route-codigo="@p.Codigo">
+                <div class="card-content">
+                    <div class="module-icon">📋</div>
+                    <h2>@p.Nombre</h2>
+                    <p>@(p.DepartamentoDescripcion ?? "Sin departamento")</p>
+                </div>
+            </a>
+        }
+    }
+    <a class="module-card" asp-controller="Horas" asp-action="Aprobar">
+        <div class="card-content">
+            <div class="module-icon">✅</div>
+            <h2>Aprobación de Horas</h2>
+            <p>Revisar y aprobar horas de tu equipo</p>
+        </div>
+    </a>
+    <a class="module-card" asp-controller="Horas" asp-action="Reporte">
+        <div class="card-content">
+            <div class="module-icon">📊</div>
+            <h2>Reporte de Horas</h2>
+            <p>Estimadas vs. reales — exportar PDF</p>
+        </div>
+    </a>
+</div>

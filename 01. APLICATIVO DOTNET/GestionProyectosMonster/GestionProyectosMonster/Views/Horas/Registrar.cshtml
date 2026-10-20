@@ -1,0 +1,95 @@
+@model List<GestionProyectosMonster.Models.RegistroHoras>
+@{
+    ViewData["Title"] = "Registrar Horas";
+    string semana    = ViewBag.Semana    ?? DateTime.Today.ToString("yyyy-MM-dd");
+    string semanaTxt = ViewBag.SemanaTxt ?? semana;
+    DateTime lunesActual = DateTime.Today.AddDays(-(((int)DateTime.Today.DayOfWeek - 1 + 7) % 7));
+    DateTime lunesSemana = DateTime.Parse(semana);
+    string semanaAnterior = lunesSemana.AddDays(-7).ToString("yyyy-MM-dd");
+    string semanaSiguiente = lunesSemana.AddDays(7).ToString("yyyy-MM-dd");
+}
+
+<div class="page-heading">
+    <div>
+        <h1>Registrar Horas</h1>
+        <p>@semanaTxt</p>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+        <a asp-action="Registrar" asp-route-semana="@semanaAnterior" class="btn btn-secondary btn-sm">← Anterior</a>
+        <a asp-action="Registrar" class="btn btn-ghost btn-sm">Semana actual</a>
+        @if (lunesSemana < lunesActual)
+        {
+            <a asp-action="Registrar" asp-route-semana="@semanaSiguiente" class="btn btn-secondary btn-sm">Siguiente →</a>
+        }
+    </div>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="card card-padded">
+        <p class="muted">No tienes proyectos asignados esta semana.</p>
+    </div>
+}
+else
+{
+    <form asp-action="Registrar" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="semana" value="@semana" />
+
+        <div class="card table-card">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Proyecto</th>
+                        <th>H. Estimadas/sem.</th>
+                        <th>Horas registradas</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in Model)
+                    {
+                        bool bloqueado = r.Estado == "A" || r.Estado == "R";
+                        <tr>
+                            <td>
+                                <input type="hidden" name="proyectos" value="@r.CodigoProyecto" />
+                                <strong>@r.NombreProyecto</strong>
+                                <span class="code-badge" style="margin-left:6px">@r.CodigoProyecto</span>
+                            </td>
+                            <td>
+                                @(r.HorasEstimadas.HasValue ? $"{r.HorasEstimadas:0.#} h" : "—")
+                            </td>
+                            <td>
+                                <input type="number" name="horas" step="0.5" min="0" max="80"
+                                       value="@r.Horas.ToString("0.##")"
+                                       @(bloqueado ? "readonly class=\"readonly\"" : "")
+                                       style="width:90px" />
+                            </td>
+                            <td>
+                                @{
+                                    string estadoCls = r.Estado switch {
+                                        "A" => "badge-active",
+                                        "R" => "badge-inactive",
+                                        _   => ""
+                                    };
+                                }
+                                <span class="badge @estadoCls">@r.EstadoDescripcion</span>
+                                @if (!string.IsNullOrEmpty(r.Observaciones))
+                                {
+                                    <span style="font-size:11.5px;color:var(--tx-3);display:block">@r.Observaciones</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (Model.Any(r => r.Estado == "P" || r.Codigo == ""))
+        {
+            <div class="form-footer">
+                <button type="submit" class="btn btn-primary">Guardar horas</button>
+            </div>
+        }
+    </form>
+}

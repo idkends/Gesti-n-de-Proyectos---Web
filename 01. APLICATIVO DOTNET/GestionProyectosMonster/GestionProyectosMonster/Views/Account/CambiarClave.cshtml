@@ -1,0 +1,166 @@
+@{
+    ViewData["Title"] = "Cambiar Contraseña";
+}
+
+<div class="page-heading">
+    <div>
+        <p style="font-size:12px;color:var(--tx-3);margin-bottom:4px">Mi Cuenta</p>
+        <h1>Cambiar Contraseña</h1>
+        <p>Actualiza tu contraseña de acceso al sistema</p>
+    </div>
+    <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">← Volver al inicio</a>
+</div>
+
+<div style="max-width:480px">
+    <div class="card form-card">
+        <h2>Nueva contraseña</h2>
+
+        <form method="post" asp-action="CambiarClave" id="formClave">
+            @Html.AntiForgeryToken()
+
+            <!-- Clave actual -->
+            <div class="field">
+                <label>Contraseña actual <span class="req">*</span></label>
+                <div style="position:relative">
+                    <input id="claveActual" name="claveActual" type="password"
+                           placeholder="Tu contraseña actual" required
+                           style="padding-right:44px" />
+                    <button type="button" class="toggle-pass" onclick="toggleVer('claveActual',this)"
+                            title="Mostrar/ocultar">
+                        👁
+                    </button>
+                </div>
+            </div>
+
+            <!-- Nueva clave -->
+            <div class="field">
+                <label>Nueva contraseña <span class="req">*</span></label>
+                <div style="position:relative">
+                    <input id="claveNueva" name="claveNueva" type="password"
+                           placeholder="Mínimo 9 caracteres" required
+                           oninput="evaluarClave()" style="padding-right:44px" />
+                    <button type="button" class="toggle-pass" onclick="toggleVer('claveNueva',this)"
+                            title="Mostrar/ocultar">
+                        👁
+                    </button>
+                </div>
+
+                <!-- Barra de fortaleza -->
+                <div style="margin-top:8px">
+                    <div style="height:6px;border-radius:3px;background:var(--border);overflow:hidden">
+                        <div id="barraFortaleza" style="height:100%;width:0%;transition:width .3s,background .3s;border-radius:3px"></div>
+                    </div>
+                    <p id="textoFortaleza" style="font-size:11px;color:var(--tx-3);margin-top:4px"></p>
+                </div>
+
+                <!-- Checklist de política -->
+                <ul style="list-style:none;padding:10px 0 0;margin:0;display:flex;flex-direction:column;gap:4px;font-size:12px">
+                    <li id="chk-len">  <span class="chk-ico">✗</span> Mínimo 9 caracteres</li>
+                    <li id="chk-may">  <span class="chk-ico">✗</span> Al menos 1 letra mayúscula</li>
+                    <li id="chk-num">  <span class="chk-ico">✗</span> Al menos 1 número</li>
+                    <li id="chk-spec"> <span class="chk-ico">✗</span> Al menos 1 carácter especial</li>
+                </ul>
+            </div>
+
+            <!-- Confirmación -->
+            <div class="field">
+                <label>Confirmar contraseña <span class="req">*</span></label>
+                <div style="position:relative">
+                    <input id="claveConfirmacion" name="claveConfirmacion" type="password"
+                           placeholder="Repite la nueva contraseña" required
+                           oninput="evaluarCoincidencia()" style="padding-right:44px" />
+                    <button type="button" class="toggle-pass" onclick="toggleVer('claveConfirmacion',this)"
+                            title="Mostrar/ocultar">
+                        👁
+                    </button>
+                </div>
+                <p id="textoCoincidencia" style="font-size:12px;margin-top:4px"></p>
+            </div>
+
+            <div class="form-footer">
+                <button type="submit" id="btnGuardar" class="btn btn-primary" disabled>
+                    Actualizar contraseña
+                </button>
+                <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.toggle-pass {
+    position:absolute;right:10px;top:50%;transform:translateY(-50%);
+    background:none;border:none;cursor:pointer;font-size:16px;padding:2px;
+    color:var(--tx-3);
+}
+.chk-ico { display:inline-block;width:14px;font-style:normal }
+.chk-ok  { color:var(--brand) }
+.chk-fail{ color:var(--tx-3)  }
+</style>
+
+@section Scripts {
+<script>
+function toggleVer(id, btn) {
+    const inp = document.getElementById(id);
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+function evaluarClave() {
+    const v = document.getElementById('claveNueva').value;
+    const checks = {
+        'chk-len':  v.length >= 9,
+        'chk-may':  /[A-Z]/.test(v),
+        'chk-num':  /\d/.test(v),
+        'chk-spec': /[^A-Za-z0-9]/.test(v)
+    };
+    let cumple = 0;
+    Object.entries(checks).forEach(([id, ok]) => {
+        const li  = document.getElementById(id);
+        const ico = li.querySelector('.chk-ico');
+        ico.textContent = ok ? '✓' : '✗';
+        li.className = ok ? 'chk-ok' : 'chk-fail';
+        if (ok) cumple++;
+    });
+    const barra = document.getElementById('barraFortaleza');
+    const texto = document.getElementById('textoFortaleza');
+    const pct   = (cumple / 4) * 100;
+    barra.style.width = pct + '%';
+    if (cumple <= 1)      { barra.style.background = '#e74c3c'; texto.textContent = 'Débil'; }
+    else if (cumple <= 2) { barra.style.background = '#f39c12'; texto.textContent = 'Regular'; }
+    else if (cumple <= 3) { barra.style.background = '#3498db'; texto.textContent = 'Buena'; }
+    else                  { barra.style.background = '#2ecc71'; texto.textContent = 'Fuerte'; }
+    evaluarCoincidencia();
+}
+
+function evaluarCoincidencia() {
+    const nueva  = document.getElementById('claveNueva').value;
+    const conf   = document.getElementById('claveConfirmacion').value;
+    const texto  = document.getElementById('textoCoincidencia');
+    const btn    = document.getElementById('btnGuardar');
+
+    const politicaOk = nueva.length >= 9
+        && /[A-Z]/.test(nueva)
+        && /\d/.test(nueva)
+        && /[^A-Za-z0-9]/.test(nueva);
+
+    if (!conf) {
+        texto.textContent = '';
+        btn.disabled = true;
+        return;
+    }
+    if (nueva === conf && politicaOk) {
+        texto.style.color = 'var(--brand)';
+        texto.textContent = '✓ Las contraseñas coinciden';
+        btn.disabled = false;
+    } else if (nueva !== conf) {
+        texto.style.color = '#e74c3c';
+        texto.textContent = '✗ Las contraseñas no coinciden';
+        btn.disabled = true;
+    } else {
+        texto.style.color = '#f39c12';
+        texto.textContent = 'La contraseña no cumple la política de seguridad';
+        btn.disabled = true;
+    }
+}
+</script>
+}

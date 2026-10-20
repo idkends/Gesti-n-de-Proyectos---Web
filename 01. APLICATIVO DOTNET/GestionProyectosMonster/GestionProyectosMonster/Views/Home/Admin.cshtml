@@ -1,0 +1,125 @@
+@{
+    ViewData["Title"] = "Panel de Administración";
+}
+
+<div class="page-heading">
+    <div>
+        <h1>Panel de Administración</h1>
+        <p>Bienvenido, @User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value</p>
+    </div>
+</div>
+
+<div class="module-grid">
+
+    <div class="module-section-title">Personal</div>
+
+    <a class="module-card" asp-controller="Empleado" asp-action="Index">
+        <div class="card-content">
+            <div class="module-icon">👤</div>
+            <h2>Personal</h2>
+            <p>@ViewBag.TotalEmpleados empleado(s) registrado(s)</p>
+        </div>
+    </a>
+    <a class="module-card" asp-controller="Empleado" asp-action="Organigrama">
+        <div class="card-content">
+            <div class="module-icon">🌳</div>
+            <h2>Organigrama</h2>
+            <p>Árbol jerárquico Dpto → Cargo → Empleado</p>
+        </div>
+    </a>
+    <a class="module-card" asp-controller="Departamento" asp-action="Index">
+        <div class="card-content">
+            <div class="module-icon">🏢</div>
+            <h2>Departamentos</h2>
+            <p>Gestionar departamentos y cargos</p>
+        </div>
+    </a>
+
+    <div class="module-section-title">Seguridad</div>
+
+    <a class="module-card" asp-controller="Usuario" asp-action="Index">
+        <div class="card-content">
+            <div class="module-icon">🔑</div>
+            <h2>Usuarios</h2>
+            <p>Gestionar accesos y perfiles</p>
+        </div>
+    </a>
+    <a class="module-card" asp-controller="Usuario" asp-action="GestionarClave">
+        <div class="card-content">
+            <div class="module-icon">🔐</div>
+            <h2>Contraseñas</h2>
+            <p>Restablecer credenciales de usuarios</p>
+        </div>
+    </a>
+    <a class="module-card" asp-controller="Usuario" asp-action="AsignarPerfil">
+        <div class="card-content">
+            <div class="module-icon">🔄</div>
+            <h2>Asignar Perfiles</h2>
+            <p>Cambio masivo de roles con PickList</p>
+        </div>
+    </a>
+    <a class="module-card" asp-controller="Perfil" asp-action="Index">
+        <div class="card-content">
+            <div class="module-icon">🛡</div>
+            <h2>Gestión de Perfiles</h2>
+            <p>Crear y administrar perfiles de seguridad</p>
+        </div>
+    </a>
+    <a class="module-card" asp-controller="Perfil" asp-action="AsignarOpciones">
+        <div class="card-content">
+            <div class="module-icon">☑</div>
+            <h2>Asignar Opciones al Perfil</h2>
+            <p>Definir qué módulos ve cada perfil</p>
+        </div>
+    </a>
+
+    <div class="module-section-title">Gestión de Proyectos</div>
+
+    <a class="module-card" asp-controller="Proyecto" asp-action="Index">
+        <div class="card-content">
+            <div class="module-icon">📋</div>
+            <h2>Proyectos</h2>
+            <p>@ViewBag.TotalProyectos proyecto(s) activo(s)</p>
+        </div>
+    </a>
+    <a class="module-card" asp-controller="Horas" asp-action="Aprobar">
+        <div class="card-content">
+            <div class="module-icon">✅</div>
+            <h2>Aprobación de Horas</h2>
+            <p>Revisar horas enviadas por empleados</p>
+        </div>
+    </a>
+
+    <div class="module-section-title">Finanzas</div>
+
+    <a class="module-card" asp-controller="Reporte" asp-action="Index">
+        <div class="card-content">
+            <div class="module-icon">📄</div>
+            <h2>Reporte de Personal</h2>
+            <p>Personal activo, roles y estados — PDF</p>
+        </div>
+    </a>
+    <a class="module-card" asp-controller="Horas" asp-action="Reporte">
+        <div class="card-content">
+            <div class="module-icon">📊</div>
+            <h2>Reporte de Horas</h2>
+            <p>Estimadas vs. reales aprobadas por proyecto</p>
+        </div>
+    </a>
+
+</div>
+
+<div class="card form-card" style="margin-top:24px">
+    <h2>Acceso rápido</h2>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px">
+        <a asp-controller="Account" asp-action="CambiarClave" class="btn btn-secondary">
+            Cambiar mi contraseña
+        </a>
+        <a asp-controller="Perfil" asp-action="Index" class="btn btn-secondary">
+            Gestión de Perfiles
+        </a>
+        <a asp-controller="Perfil" asp-action="AsignarOpciones" class="btn btn-secondary">
+            Asignar Opciones al Perfil
+        </a>
+    </div>
+</div>
