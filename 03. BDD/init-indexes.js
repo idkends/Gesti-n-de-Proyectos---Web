@@ -4,7 +4,7 @@
 // necesarios.
 //
 // Uso:
-//   mongosh "mongodb://localhost:27017" Database/MongoDB/init-indexes.js
+//   mongosh "mongodb://localhost:27017" "03. BDD/init-indexes.js"
 // ==================================================================
 
 const db = db.getSiblingDB("GestionProyectosMonster");

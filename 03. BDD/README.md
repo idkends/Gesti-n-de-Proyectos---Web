@@ -15,8 +15,8 @@ colecciones y documentos, sin ORM ni mapeo de clases con atributos Bson.
    insertar el primer documento (no requiere un `CREATE DATABASE` explícito).
 4. Ejecuta los scripts de este folder con `mongosh`:
    ```
-   mongosh "mongodb://localhost:27017" Database/MongoDB/init-indexes.js
-   mongosh "mongodb://localhost:27017" Database/MongoDB/seed-data.js
+   mongosh "mongodb://localhost:27017" "03. BDD/init-indexes.js"
+   mongosh "mongodb://localhost:27017" "03. BDD/seed-data.js"
    ```
 
 ### Opción B: MongoDB Atlas (nube)
@@ -35,14 +35,14 @@ colecciones y documentos, sin ORM ni mapeo de clases con atributos Bson.
    ```
 5. Ejecuta los mismos scripts `mongosh` apuntando al connection string de Atlas:
    ```
-   mongosh "mongodb+srv://usuario:password@cluster0.xxxxx.mongodb.net/" Database/MongoDB/init-indexes.js
-   mongosh "mongodb+srv://usuario:password@cluster0.xxxxx.mongodb.net/" Database/MongoDB/seed-data.js
+   mongosh "mongodb+srv://usuario:password@cluster0.xxxxx.mongodb.net/" "03. BDD/init-indexes.js"
+   mongosh "mongodb+srv://usuario:password@cluster0.xxxxx.mongodb.net/" "03. BDD/seed-data.js"
    ```
 
 ### Ejecutar la aplicación
 
 ```
-cd GestionProyectosMonster
+cd "01. APLICATIVO DOTNET/GestionProyectosMonster/GestionProyectosMonster"
 dotnet run
 ```
 

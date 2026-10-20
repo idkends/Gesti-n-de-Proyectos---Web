@@ -5,7 +5,7 @@
 // README.md.
 //
 // Uso:
-//   mongosh "mongodb://localhost:27017" Database/MongoDB/seed-data.js
+//   mongosh "mongodb://localhost:27017" "03. BDD/seed-data.js"
 //
 // NOTA: este script es destructivo para las colecciones que rellena
 // (usa deleteMany antes de insertar) para que se pueda ejecutar
